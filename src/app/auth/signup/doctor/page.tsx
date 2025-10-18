@@ -17,7 +17,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { verifyDoctorDocuments } from "@/ai/flows/doctor-verification-flow";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from "@/components/ui/alert-dialog";
+
 
 const doctorSignupSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters."),
@@ -41,9 +43,18 @@ const doctorSignupSchema = z.object({
 
 const specializations = ["Cardiologist", "Dermatologist", "Pediatrician", "Psychologist", "General Physician", "Orthopedic", "Neurologist"];
 
+const fileToDataUri = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
 
 export default function DoctorSignupPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [showVerificationFailedPopup, setShowVerificationFailedPopup] = useState(false);
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
@@ -66,13 +77,31 @@ export default function DoctorSignupPage() {
     }
   });
 
-  // In a real app, you would upload the document to Firebase Storage and save the URL.
-  // For this prototype, we'll just acknowledge the file is there.
+
   async function onSubmit(values: z.infer<typeof doctorSignupSchema>) {
     if (!auth || !firestore) return;
     setIsLoading(true);
 
     try {
+        const documentFile = values.document[0] as File;
+        const documentDataUri = await fileToDataUri(documentFile);
+
+        toast({
+            title: "Verifying Document...",
+            description: "Our AI is verifying your license. Please wait.",
+        });
+
+        const verificationResult = await verifyDoctorDocuments({
+            documentDataUri,
+            adminInstructions: `Verify the medical license for Dr. ${values.fullName}, specializing in ${values.specialization}. License number provided: ${values.licenseNumber}.`,
+        });
+
+        if (verificationResult.verificationScore < 75) {
+            setShowVerificationFailedPopup(true);
+            setIsLoading(false);
+            return;
+        }
+
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
@@ -89,11 +118,10 @@ export default function DoctorSignupPage() {
         specialization: values.specialization,
         degreeLicenseNumber: values.licenseNumber,
         experience: values.experience,
-        location: "", // Can be added in profile settings
-        isVerified: false,
-        verificationStatus: 'Pending',
+        location: "",
+        isVerified: true,
+        verificationStatus: 'Verified by AI',
         createdAt: new Date().toISOString(),
-        // other fields can be added later
       });
       
       const userDocRef = doc(firestore, "users", user.uid);
@@ -109,10 +137,9 @@ export default function DoctorSignupPage() {
 
       toast({
         title: "Application Submitted!",
-        description: "Your registration is under review. You'll be notified once verified.",
+        description: "Your registration has been successfully verified by our AI.",
       });
-      // Redirect to a pending verification page or login page
-      router.push("/auth/login/doctor");
+      router.push("/doctor-dashboard");
 
     } catch (error: any) {
       console.error("Doctor signup failed:", error);
@@ -134,6 +161,19 @@ export default function DoctorSignupPage() {
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back
       </Button>
+       <AlertDialog open={showVerificationFailedPopup} onOpenChange={setShowVerificationFailedPopup}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Verification Failed</AlertDialogTitle>
+            <AlertDialogDescription>
+              We could not verify your medical license with the document provided. Please ensure the document is clear and the license number is correct, then try again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowVerificationFailedPopup(false)}>Got it</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <div className="grid gap-2 text-center mb-4">
         <h2 className="text-2xl font-bold">Doctor Registration</h2>
         <p className="text-muted-foreground">Apply to join our network of trusted professionals.</p>
@@ -184,7 +224,7 @@ export default function DoctorSignupPage() {
           )} />
           <FormField control={form.control} name="terms" render={({ field }) => (
             <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-               <FormControl><Input type="checkbox" checked={field.value} onChange={field.onChange} className="h-4 w-4" /></FormControl>
+               <FormControl><input type="checkbox" checked={field.value} onChange={field.onChange} className="h-4 w-4" /></FormControl>
               <div className="space-y-1 leading-none">
                 <FormLabel>Accept terms and conditions</FormLabel>
                  <FormDescription>You agree to our <Link href="/terms" className="underline">Terms of Service</Link> and <Link href="/privacy" className="underline">Privacy Policy</Link>.</FormDescription>
@@ -204,5 +244,5 @@ export default function DoctorSignupPage() {
         </Link>
       </div>
     </>
-  );
-}
+
+    
