@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { useAuth, initiateEmailSignUp } from "@/firebase";
+import { useAuth, initiateEmailSignUp, initiateEmailSignIn } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 
 export default function SignupPage() {
@@ -23,6 +23,18 @@ export default function SignupPage() {
     e.preventDefault();
     if (!auth) return;
 
+    if (role === 'doctor') {
+      // For demonstration, we'll create the dummy doctor account here
+      // In a real app, you'd have a proper doctor application process.
+      initiateEmailSignUp(auth, 'jalal@gmail.com', '123456');
+      toast({
+        title: "Doctor Account Created",
+        description: "The dummy doctor account has been created. You can now log in.",
+      });
+      router.push('/auth/login');
+      return;
+    }
+
     initiateEmailSignUp(auth, email, password);
     // Here you would typically also save the user's role and other details to Firestore.
     // We will add that in a later step.
@@ -31,11 +43,7 @@ export default function SignupPage() {
       description: "Redirecting you to your dashboard...",
     });
     
-    if (role === 'doctor') {
-      router.push('/doctor-dashboard');
-    } else {
-      router.push('/patient-dashboard');
-    }
+    router.push('/patient-dashboard');
   };
 
 
