@@ -13,7 +13,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="mx-auto grid w-[350px] gap-6">
           <div className="grid gap-2 text-center">
             <Link href="/" className="mx-auto mb-4">
-                <Logo className="size-12" />
+                <Logo className="size-16" />
             </Link>
             <h1 className="text-3xl font-bold font-headline">Welcome to HealthSphere</h1>
             <p className="text-balance text-muted-foreground">

@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
-import { User, Stethoscope, Shield } from 'lucide-react';
+import { User, Stethoscope, Shield, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,10 @@ export default function RoleSelectionPage() {
 
   return (
     <>
+      <Button variant="ghost" size="sm" className="absolute top-4 left-4" onClick={() => router.push('/')}>
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Home
+      </Button>
       <div className="grid gap-4 w-full">
         {roles.map((role, index) => (
           <Link key={index} href={role.href} passHref>
@@ -59,4 +63,3 @@ export default function RoleSelectionPage() {
     </>
   );
 }
-
