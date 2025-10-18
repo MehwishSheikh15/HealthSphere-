@@ -9,6 +9,18 @@ export type NavItem = {
 
 export type Role = 'patient' | 'doctor' | 'admin';
 
+export type User = {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    notificationSettings?: {
+        appointmentReminders?: boolean;
+        medicationReminders?: boolean;
+        emailNotifications?: boolean;
+    }
+}
+
 export type Appointment = {
     id: string;
     doctorId: string;
