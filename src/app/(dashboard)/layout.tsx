@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
+import { Footer } from '@/components/layout/footer';
 
 // This would come from your auth context in a real app
 const useUserRole = (): Role => {
@@ -108,76 +109,79 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen">
-        <Sidebar>
-            <SidebarHeader>
-                <div className="flex items-center gap-2">
-                    <Logo className="w-32" />
-                </div>
-            </SidebarHeader>
-            <SidebarContent className="p-2">
-                <ModernDashboardNav />
-            </SidebarContent>
-            <SidebarFooter>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-start p-2 h-auto">
-                    <div className="flex items-center gap-2 w-full">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={`https://picsum.photos/seed/${userDisplay.email}/40/40`} />
-                        <AvatarFallback>{userDisplay.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 text-left group-data-[collapsible=icon]:hidden">
-                          <p className="text-sm font-medium leading-none">{userDisplay.name}</p>
-                          <p className="text-xs leading-none text-muted-foreground truncate">{userDisplay.email}</p>
-                      </div>
-                      <ChevronDown className="h-4 w-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
+      <div className="relative flex min-h-screen flex-col">
+        <div className="flex flex-1">
+            <Sidebar>
+                <SidebarHeader>
+                    <div className="flex items-center gap-2">
+                        <Logo className="w-32" />
                     </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 mb-2" align="end" forceMount>
-                   <DropdownMenuItem onClick={handleLogout}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </SidebarFooter>
-        </Sidebar>
-        <div className="flex-1">
-          <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur-sm">
-            <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-              <div className="flex items-center gap-4">
-                 <SidebarTrigger className="md:hidden" />
-                 <Link href="/" className="md:hidden">
-                    <Logo className="w-28" />
-                 </Link>
-                 <h1 className="text-xl font-semibold capitalize hidden md:block">{role} Dashboard</h1>
-              </div>
-              <div className="flex items-center gap-4">
-                <DropdownMenu>
+                </SidebarHeader>
+                <SidebarContent className="p-2">
+                    <ModernDashboardNav />
+                </SidebarContent>
+                <SidebarFooter>
+                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                        <Avatar className="h-8 w-8">
-                            <AvatarImage src={`https://picsum.photos/seed/${userDisplay.email}/40/40`} alt={userDisplay.name} />
+                      <Button variant="ghost" className="w-full justify-start p-2 h-auto">
+                        <div className="flex items-center gap-2 w-full">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={`https://picsum.photos/seed/${userDisplay.email}/40/40`} />
                             <AvatarFallback>{userDisplay.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                    </Button>
+                          </Avatar>
+                          <div className="flex-1 text-left group-data-[collapsible=icon]:hidden">
+                              <p className="text-sm font-medium leading-none">{userDisplay.name}</p>
+                              <p className="text-xs leading-none text-muted-foreground truncate">{userDisplay.email}</p>
+                          </div>
+                          <ChevronDown className="h-4 w-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
+                        </div>
+                      </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuItem onClick={handleLogout}>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Log out</span>
-                    </DropdownMenuItem>
+                    <DropdownMenuContent className="w-56 mb-2" align="end" forceMount>
+                       <DropdownMenuItem onClick={handleLogout}>
+                          <LogOut className="mr-2 h-4 w-4" />
+                          <span>Log out</span>
+                        </DropdownMenuItem>
                     </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                  </DropdownMenu>
+                </SidebarFooter>
+            </Sidebar>
+            <div className="flex-1 flex flex-col">
+              <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur-sm">
+                <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
+                  <div className="flex items-center gap-4">
+                     <SidebarTrigger className="md:hidden" />
+                     <Link href="/patient-dashboard" className="md:hidden">
+                        <Logo className="w-28" />
+                     </Link>
+                     <h1 className="text-xl font-semibold capitalize hidden md:block">{role} Dashboard</h1>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                            <Avatar className="h-8 w-8">
+                                <AvatarImage src={`https://picsum.photos/seed/${userDisplay.email}/40/40`} alt={userDisplay.name} />
+                                <AvatarFallback>{userDisplay.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                        </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-56" align="end" forceMount>
+                        <DropdownMenuItem onClick={handleLogout}>
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Log out</span>
+                        </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              </header>
+              <main className="flex-1 p-4 md:p-6">
+                {children}
+              </main>
             </div>
-          </header>
-          <main className="p-4 md:p-6">
-            {children}
-          </main>
-        </div>
+          </div>
+        <Footer />
       </div>
     </SidebarProvider>
   );
