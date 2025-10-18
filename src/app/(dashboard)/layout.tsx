@@ -6,46 +6,61 @@ import { cn } from '@/lib/utils';
 import { useSidebar, SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarRail } from '@/components/ui/sidebar';
 import { Logo } from '@/components/layout/logo';
 import { navItems } from '@/lib/config';
-import { type Role, type NavItem } from '@/lib/types';
+import { type Role, type NavItem, type User as UserEntity } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, ChevronDown } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
+import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Footer } from '@/components/layout/footer';
 
 // This would come from your auth context in a real app
-const useUserRole = (): Role => {
-  const { user } = useUser();
-  const pathname = usePathname();
+const useUserRole = (): { role: Role, isLoading: boolean } => {
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
 
-  // This is a placeholder for custom claims logic
-  if (user?.email === 'jalal@gmail.com') return 'doctor';
-  if (user?.email?.includes('admin')) return 'admin';
-  if (pathname.startsWith('/doctor-dashboard')) return 'doctor';
-  if (pathname.startsWith('/admin-panel')) return 'admin';
+  const userDocRef = useMemoFirebase(() => {
+    if (!user?.uid || !firestore) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user?.uid, firestore]);
 
-  return 'patient';
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserEntity>(userDocRef);
+
+  const isLoading = isUserLoading || isProfileLoading;
+
+  if (isLoading) {
+    return { role: 'patient', isLoading: true };
+  }
+  
+  if (userProfile?.role === 'doctor') return { role: 'doctor', isLoading: false };
+  if (userProfile?.role === 'admin') return { role: 'admin', isLoading: false };
+  
+  // A simple fallback based on email for demonstration
+  if (user?.email === 'jalal@gmail.com') return { role: 'doctor', isLoading: false };
+  if (user?.email?.includes('admin')) return { role: 'admin', isLoading: false };
+
+  return { role: 'patient', isLoading: false };
 };
 
 const useUserDisplay = () => {
     const { user } = useUser();
-    const role = useUserRole();
+    const { role } = useUserRole();
 
     if (role === 'doctor') {
-        return { name: "Dr. Jalal", email: "jalal@gmail.com" };
+        return { name: user?.displayName || "Dr. User", email: user?.email || "doctor@example.com" };
     }
-    if (role === 'patient') {
-        return { name: user?.displayName || "Ameen", email: user?.email || "ameen@example.com" };
+    if (role === 'admin') {
+        return { name: "Admin", email: user?.email || "admin@healthsphere.com"};
     }
-    return { name: "Admin", email: "admin@healthsphere.com"};
+    return { name: user?.displayName || "Patient", email: user?.email || "patient@example.com" };
 }
 
 function ModernDashboardNav() {
   const pathname = usePathname();
-  const role = useUserRole();
+  const { role } = useUserRole();
   const { open } = useSidebar();
   const currentNavItems = navItems[role];
 
@@ -73,7 +88,7 @@ function ModernDashboardNav() {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const userDisplay = useUserDisplay();
-  const role = useUserRole();
+  const { role, isLoading: isRoleLoading } = useUserRole();
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -95,7 +110,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [isUserLoading, user, router]);
 
-  if (isUserLoading) {
+  const isLoading = isUserLoading || isRoleLoading;
+
+  if (isLoading) {
     return (
         <div className="flex items-center justify-center min-h-screen">
             <p>Loading dashboard...</p>
@@ -115,7 +132,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <SidebarRail />
                 <SidebarHeader>
                     <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-                        <Link href="/patient-dashboard"><Logo className="w-8 group-data-[collapsible=icon]:w-8" iconOnly /></Link>
+                        <Link href="/patient-dashboard"><Logo className="w-8" iconOnly /></Link>
                         <span className="text-xl font-bold group-data-[collapsible=icon]:hidden">HealthSphere</span>
                     </div>
                 </SidebarHeader>
