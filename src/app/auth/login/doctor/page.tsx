@@ -6,26 +6,29 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/firebase";
+import { useAuth, useFirestore } from "@/firebase";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { ArrowLeft } from "lucide-react";
+import { doc, setDoc } from "firebase/firestore";
 
 export default function DoctorLoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("jalal@gmail.com");
+  const [password, setPassword] = useState("Jalal.12");
   const [isLoading, setIsLoading] = useState(false);
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) return;
+    if (!auth || !firestore) return;
     setIsLoading(true);
 
     try {
+      // First, try to sign in the user
       await signInWithEmailAndPassword(auth, email, password);
       toast({
         title: "Login Successful",
@@ -33,12 +36,56 @@ export default function DoctorLoginPage() {
       });
       router.push('/doctor-dashboard');
     } catch (error: any) {
-        console.error("Login failed: ", error);
-        toast({
-            variant: "destructive",
-            title: "Login Failed",
-            description: "Invalid credentials. Please check your email and password and try again."
-        });
+        // If login fails because the user doesn't exist, create the account
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // Update profile and create Firestore documents
+                await updateProfile(user, { displayName: `Dr. Jalal Ahmed` });
+
+                const doctorDocRef = doc(firestore, "doctors", user.uid);
+                await setDoc(doctorDocRef, {
+                    id: user.uid,
+                    name: `Dr. Jalal Ahmed`,
+                    email: email,
+                    role: "doctor",
+                    isVerified: true, // Assuming this special user is pre-verified
+                    verificationStatus: 'Verified',
+                    createdAt: new Date().toISOString(),
+                });
+                
+                const userDocRef = doc(firestore, "users", user.uid);
+                await setDoc(userDocRef, {
+                    id: user.uid,
+                    name: `Dr. Jalal Ahmed`,
+                    email: email,
+                    role: "doctor",
+                    createdAt: new Date().toISOString(),
+                });
+                
+                toast({
+                    title: "Account Created & Logged In",
+                    description: "Redirecting you to your dashboard...",
+                });
+                router.push('/doctor-dashboard');
+
+            } catch (creationError: any) {
+                 toast({
+                    variant: "destructive",
+                    title: "Login Failed",
+                    description: "Could not log in or create an account. Please try again."
+                });
+            }
+        } else {
+            // Handle other login errors
+            toast({
+                variant: "destructive",
+                title: "Login Failed",
+                description: "Invalid credentials. Please check your email and password and try again."
+            });
+        }
     } finally {
         setIsLoading(false);
     }
