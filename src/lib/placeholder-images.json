@@ -35,6 +35,12 @@
       "description": "An abstract medical background with geometric shapes.",
       "imageUrl": "https://images.unsplash.com/photo-1486291301608-a503c774721a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtZWRpY2FsJTIwYWJzdHJhY3R8ZW58MHx8fHwxNzYwNzczMTYzfDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "medical abstract"
+    },
+    {
+      "id": "dummy-license",
+      "description": "A placeholder image for a medical license document.",
+      "imageUrl": "https://images.unsplash.com/photo-1657114162943-04988ff671d9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxsaWNlbnNlJTIwZG9jdW1lbnR8ZW58MHx8fHwxNzYwODAwODMyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "license document"
     }
   ]
 }

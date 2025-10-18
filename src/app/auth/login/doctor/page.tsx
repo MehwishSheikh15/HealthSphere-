@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { ArrowLeft } from "lucide-react";
 import { doc, setDoc } from "firebase/firestore";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export default function DoctorLoginPage() {
   const [email, setEmail] = useState("jalal@gmail.com");
@@ -42,6 +43,8 @@ export default function DoctorLoginPage() {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
                 const doctorId = 'jalal-ahmed';
+                const dummyLicense = PlaceHolderImages.find(p => p.id === 'dummy-license');
+
 
                 // Update Auth profile
                 await updateProfile(user, { displayName: `Dr. Jalal Ahmed` });
@@ -59,6 +62,7 @@ export default function DoctorLoginPage() {
                     createdAt: new Date().toISOString(),
                     specialization: 'Cardiology',
                     experience: 10,
+                    licenseDocumentUrl: dummyLicense?.imageUrl || '',
                 });
                 
                 // Create the user document in 'users' collection for role-based access
