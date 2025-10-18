@@ -55,6 +55,9 @@ export default function PatientSignupPage() {
       password: "",
       confirmPassword: "",
       phone: "",
+      gender: undefined,
+      dob: undefined,
+      terms: false,
     }
   });
 
