@@ -1,3 +1,4 @@
+
 import Image from "next/image";
 import Link from "next/link";
 import { Logo } from "@/components/layout/logo";
@@ -8,7 +9,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="relative min-h-screen w-full lg:grid lg:grid-cols-2">
-       <div className="flex items-center justify-center py-12">
+       <div className="relative flex items-center justify-center py-12">
         <div className="mx-auto grid w-[350px] gap-6">
           <div className="grid gap-2 text-center">
             <Link href="/" className="mx-auto mb-4">
@@ -16,7 +17,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             </Link>
             <h1 className="text-3xl font-bold font-headline">Welcome to HealthSphere</h1>
             <p className="text-balance text-muted-foreground">
-              Enter your details to access your account
+              Your trusted partner in health.
             </p>
           </div>
           {children}
