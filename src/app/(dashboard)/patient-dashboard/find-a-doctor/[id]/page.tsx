@@ -19,6 +19,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useUser, useFirestore } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import type { Appointment } from '@/lib/types';
+
 
 // Mock data, in a real app this would come from your backend
 const doctors = [
@@ -111,10 +116,13 @@ export default function DoctorProfilePage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
   const doctorId = params.id as string;
   
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [symptoms, setSymptoms] = useState("");
   const [showPopup, setShowPopup] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -129,22 +137,55 @@ export default function DoctorProfilePage() {
 
   const handleBookAppointment = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!selectedSlot || !selectedDay) {
+    if (!selectedSlot || !selectedDay || !user || !firestore) {
         toast({
             variant: "destructive",
             title: "Booking Failed",
-            description: "Please select a day and a time slot."
+            description: "Please select a day and a time slot, and ensure you are logged in."
         });
         return;
     }
 
     setIsSubmitting(true);
+    
+    // This is a simplified way to create a datetime. A real app would use a date picker.
+    const appointmentDate = new Date();
+    const dayIndex = daysOfWeek.indexOf(selectedDay);
+    const todayIndex = (today.getDay() + 6) % 7; // Monday is 0
+    let dayDiff = dayIndex - todayIndex;
+    if(dayDiff < 0) dayDiff += 7;
+    appointmentDate.setDate(today.getDate() + dayDiff);
+    
+    const [time, period] = selectedSlot.split(' ');
+    let [hours, minutes] = time.split(':').map(Number);
+    if(period === 'PM' && hours !== 12) hours += 12;
+    if(period === 'AM' && hours === 12) hours = 0;
+    appointmentDate.setHours(hours, minutes, 0, 0);
+
+
+    const newAppointment: Omit<Appointment, 'id'> = {
+        patientId: user.uid,
+        doctorId: doctor.id,
+        patientName: user.displayName || 'Anonymous',
+        doctorName: doctor.name,
+        doctorSpecialization: doctor.specialization,
+        scheduledAt: appointmentDate.toISOString(),
+        symptoms: symptoms,
+        status: 'Pending',
+        feePaid: false,
+        paymentIntentId: '', // Will be set after payment
+        videoLink: '', // Will be set after confirmation
+        createdAt: new Date().toISOString(),
+    };
+    
+    const appointmentsCol = collection(firestore, 'appointments');
+    addDocumentNonBlocking(appointmentsCol, newAppointment);
+    
     setShowPopup(true);
 
-    // Simulate API call
+    // Simulate API call and redirect
     setTimeout(() => {
         setIsSubmitting(false);
-        // In a real app, you would navigate after the API call is successful
         router.push('/patient-dashboard/appointments');
     }, 2000);
   };
@@ -269,21 +310,17 @@ export default function DoctorProfilePage() {
                 </div>
             )}
 
-            <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="patient-name">Your Name</Label>
-                    <Input id="patient-name" placeholder="Enter your full name" required />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="patient-phone">Phone Number</Label>
-                    <Input id="patient-phone" type="tel" placeholder="0300-1234567" required />
-                </div>
+             <div className="space-y-2">
+                <Label htmlFor="health-condition">Health Issue</Label>
+                <Textarea 
+                    id="health-condition" 
+                    placeholder="Briefly describe your symptoms or reason for visit" 
+                    required 
+                    value={symptoms}
+                    onChange={(e) => setSymptoms(e.target.value)}
+                />
             </div>
 
-            <div className="space-y-2">
-                <Label htmlFor="health-condition">Health Issue</Label>
-                <Textarea id="health-condition" placeholder="Briefly describe your symptoms or reason for visit" required />
-            </div>
 
             <div className="space-y-2">
                 <Label htmlFor="prescription">Upload Prescription (Optional)</Label>
@@ -292,7 +329,7 @@ export default function DoctorProfilePage() {
 
             <Button type="submit" className="w-full md:w-auto" disabled={!selectedSlot || isSubmitting}>
               <CalendarIcon className="mr-2 h-4 w-4" />
-              Confirm Appointment
+              {isSubmitting ? "Sending Request..." : "Confirm Appointment"}
             </Button>
           </form>
         </CardContent>
