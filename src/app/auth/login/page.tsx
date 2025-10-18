@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -8,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth, initiateEmailSignIn } from "@/firebase";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -16,31 +18,40 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth) return;
 
-    // Dummy doctor login
-    if (email === "jalal@gmail.com" && password === "123456") {
-      initiateEmailSignIn(auth, email, password);
-      router.push("/doctor-dashboard");
-      return;
-    }
-    
-    // Dummy admin login
-    if (email.includes('admin') && password === '123456') {
-      initiateEmailSignIn(auth, email, password);
-      router.push('/admin-panel');
-      return;
-    }
+    try {
+      // Dummy doctor login
+      if (email === "jalal@gmail.com" && password === "123456") {
+        await signInWithEmailAndPassword(auth, email, password);
+        router.push("/doctor-dashboard");
+        return;
+      }
+      
+      // Dummy admin login
+      if (email.includes('admin') && password === '123456') {
+        await signInWithEmailAndPassword(auth, email, password);
+        router.push('/admin-panel');
+        return;
+      }
 
-    initiateEmailSignIn(auth, email, password);
-    toast({
-      title: "Login Initiated",
-      description: "Redirecting you to your dashboard...",
-    });
-    // The useUser hook in the layout will handle redirection
-    router.push('/patient-dashboard');
+      await signInWithEmailAndPassword(auth, email, password);
+      toast({
+        title: "Login Successful",
+        description: "Redirecting you to your dashboard...",
+      });
+      // The useUser hook in the layout will handle redirection
+      router.push('/patient-dashboard');
+    } catch (error: any) {
+        console.error("Login failed: ", error);
+        toast({
+            variant: "destructive",
+            title: "Login Failed",
+            description: "Invalid credentials. Please check your email and password and try again."
+        });
+    }
   };
 
   return (
