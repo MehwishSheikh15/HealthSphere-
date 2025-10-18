@@ -41,14 +41,16 @@ export default function DoctorLoginPage() {
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
+                const doctorId = 'jalal-ahmed';
 
                 // Update Auth profile
                 await updateProfile(user, { displayName: `Dr. Jalal Ahmed` });
 
-                // Create the doctor document in 'doctors' collection
-                const doctorDocRef = doc(firestore, "doctors", user.uid);
+                // Create the doctor document in 'doctors' collection with a specific ID
+                const doctorDocRef = doc(firestore, "doctors", doctorId);
                 await setDoc(doctorDocRef, {
-                    id: user.uid,
+                    id: doctorId,
+                    uid: user.uid, // Keep track of the auth UID
                     name: `Dr. Jalal Ahmed`,
                     email: email,
                     role: "doctor",

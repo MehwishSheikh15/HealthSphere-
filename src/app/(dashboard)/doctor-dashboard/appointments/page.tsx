@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -96,7 +97,11 @@ export default function DoctorAppointmentsPage() {
 
     const appointmentsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
-        return query(collection(firestore, 'appointments'), where('doctorId', '==', user.uid));
+        
+        // Special case for our test doctor account
+        const doctorId = user.email === 'jalal@gmail.com' ? 'jalal-ahmed' : user.uid;
+
+        return query(collection(firestore, 'appointments'), where('doctorId', '==', doctorId));
     }, [user, firestore]);
 
     const { data: appointments, isLoading } = useCollection<Appointment>(appointmentsQuery);

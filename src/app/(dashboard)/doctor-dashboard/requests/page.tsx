@@ -1,16 +1,18 @@
+
 'use client';
 
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc } from "firebase/firestore";
+import { collection, query, where, doc, updateDoc } from "firebase/firestore";
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import type { Appointment } from "@/lib/types";
+import type { Appointment, Reminder } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Check, X, Calendar, User, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 function RequestCard({ appointment, onAccept, onDecline, isProcessing }: { appointment: Appointment, onAccept: () => void, onDecline: () => void, isProcessing: boolean }) {
   return (
@@ -74,9 +76,13 @@ export default function DoctorRequestsPage() {
 
   const requestsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
+    
+    // Special case for our test doctor account
+    const doctorId = user.email === 'jalal@gmail.com' ? 'jalal-ahmed' : user.uid;
+
     return query(
       collection(firestore, 'appointments'), 
-      where('doctorId', '==', user.uid),
+      where('doctorId', '==', doctorId),
       where('status', '==', 'Pending')
     );
   }, [user, firestore]);
@@ -88,7 +94,6 @@ export default function DoctorRequestsPage() {
     if (!firestore) return;
     setProcessingId(appointmentId);
 
-    const appointmentRef = doc(firestore, 'reminders', appointmentId);
     try {
         const appointmentDocRef = doc(firestore, 'appointments', appointmentId);
         updateDocumentNonBlocking(appointmentDocRef, { status: newStatus });
@@ -97,16 +102,16 @@ export default function DoctorRequestsPage() {
         if (newStatus === 'Confirmed') {
           const appointment = requests?.find(r => r.id === appointmentId);
           if (appointment) {
-            const reminderRef = doc(firestore, 'reminders', appointmentId);
-            updateDocumentNonBlocking(reminderRef, {
-              id: appointmentId,
-              userId: appointment.patientId,
-              type: 'appointment',
-              title: `Appointment with ${appointment.doctorName}`,
-              message: `Your appointment for ${new Date(appointment.scheduledAt).toLocaleDateString()} is confirmed.`,
-              time: appointment.scheduledAt,
-              createdAt: new Date().toISOString(),
-            });
+             const remindersCol = collection(firestore, 'reminders');
+             const newReminder: Omit<Reminder, 'id'> = {
+                userId: appointment.patientId,
+                type: 'appointment',
+                title: `Appt with ${appointment.doctorName}`,
+                message: `Your appointment is confirmed.`,
+                time: appointment.scheduledAt,
+                createdAt: new Date().toISOString(),
+             }
+            addDocumentNonBlocking(remindersCol, newReminder);
           }
         }
 
