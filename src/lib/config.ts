@@ -1,5 +1,5 @@
 import { type NavItem, type Role } from '@/lib/types';
-import { LayoutDashboard, User, Calendar, Wallet, ShieldCheck, BarChart, Settings, Bot } from 'lucide-react';
+import { LayoutDashboard, User, Calendar, Wallet, ShieldCheck, BarChart, Settings, Bot, Stethoscope } from 'lucide-react';
 
 export const navItems: Record<Role, NavItem[]> = {
   patient: [
@@ -7,6 +7,11 @@ export const navItems: Record<Role, NavItem[]> = {
       title: 'Dashboard',
       href: '/patient-dashboard',
       icon: LayoutDashboard,
+    },
+    {
+      title: 'Find a Doctor',
+      href: '/patient-dashboard/find-a-doctor',
+      icon: Stethoscope,
     },
     {
       title: 'Appointments',

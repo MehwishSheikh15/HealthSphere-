@@ -32,6 +32,12 @@ export default function PatientDashboardPage() {
       icon: BrainCircuit,
     },
     {
+      title: 'Find a Doctor',
+      description: 'Browse and connect with qualified doctors near you.',
+      href: '/patient-dashboard/find-a-doctor', 
+      icon: Stethoscope,
+    },
+    {
       title: 'Appointments',
       description: 'Manage your upcoming and past appointments.',
       href: '/patient-dashboard/appointments',
@@ -42,12 +48,6 @@ export default function PatientDashboardPage() {
       description: 'View and manage your health and medicine reminders.',
       href: '/patient-dashboard/reminders',
       icon: Bell,
-    },
-    {
-      title: 'Find a Doctor',
-      description: 'Browse and connect with qualified doctors near you.',
-      href: '#', 
-      icon: Stethoscope,
     },
     {
       title: 'Subscription',
