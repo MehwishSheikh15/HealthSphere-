@@ -47,3 +47,16 @@ export type Reminder = {
     message: string;
     createdAt: string;
 }
+
+export type Transaction = {
+    id: string;
+    appointmentId: string;
+    patientId: string;
+    patientName?: string;
+    doctorId: string;
+    amountPKR: number;
+    commission: number;
+    doctorEarning: number;
+    status: 'Paid' | 'Pending';
+    createdAt: string;
+}
