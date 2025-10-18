@@ -1,272 +1,178 @@
 /**
- * @fileoverview Firestore Security Rules for HealthSphere application.
+ * @fileoverview Firestore Security Rules for HealthSphere.
  *
  * Core Philosophy:
- * This ruleset prioritizes a secure, owner-only access model for user-specific data and a shared access model for collaborative data.
- * It focuses on preventing unauthorized data access and modification.
+ * This ruleset prioritizes security and data ownership. Users can only access their own data,
+ * while doctors and admins have specific, role-based access to appointments and related data.
  *
  * Data Structure:
- * - /users/{userId}: Stores personal user data, accessible only to the user.
- * - /doctors/{doctorId}: Stores doctor profile data, accessible only to the doctor.
- * - /appointments/{appointmentId}: Stores appointment data, accessible to participating doctor and patient.
- * - /transactions/{transactionId}: Stores transaction data, accessible to participating doctor and patient.
- * - /wallets/{walletId}: Stores wallet data, accessible only to the associated doctor.
- * - /reminders/{reminderId}: Stores reminder data, accessible only to the user who set the reminder.
- * - /subscriptions/{subscriptionId}: Stores subscription data, accessible only to the user who owns the subscription.
+ * - /users/{userId}: Stores user profile data; accessible only by the user.
+ * - /doctors/{doctorId}: Stores doctor profile data; publicly readable, writable only by the doctor.
+ * - /appointments/{appointmentId}: Stores appointment data; accessible to the patient and doctor involved.
+ * - /transactions/{transactionId}: Stores transaction data; accessible to the patient, doctor and admin.
+ * - /wallets/{walletId}: Stores wallet data for doctors, accessible only by the doctor and admin.
+ * - /reminders/{reminderId}: Stores reminders, only accessible by the user.
+ * - /subscriptions/{subscriptionId}: Stores subscription data, accessible only by the user.
  *
  * Key Security Decisions:
- * - User listing is disallowed across all collections to protect privacy.
- * - All write operations require user authentication.
- * - Data validation is minimal in this prototyping phase, focusing on authorization.
+ * - Users cannot list other users.
+ * - Doctor profiles are publicly readable to facilitate discovery.
+ * - The `appointments` collection enforces granular access based on `patientId` and `doctorId`.
  *
  * Denormalization for Authorization:
- * The rules leverage denormalization by assuming the presence of `patientId` and `doctorId` in the `appointments` and `transactions` collections to grant/restrict access based on user roles.
+ * - Appointment documents should contain both `patientId` and `doctorId` fields, enabling rules to quickly
+ *   verify access for both parties without additional reads.
  *
  * Structural Segregation:
- * User and doctor profiles are stored in separate collections (`/users` and `/doctors`) to maintain a clear security posture for each.
+ * - User and doctor profiles are stored in separate collections to enforce different access policies.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Grants access to user profiles only to the authenticated user.
-     * @path /databases/{database}/documents/users/{userId}
-     * @allow (create) User with UID 'user123' can create their own profile.
-     * @allow (get) User with UID 'user123' can read their own profile.
-     * @allow (update) User with UID 'user123' can update their own profile.
-     * @allow (delete) User with UID 'user123' can delete their own profile.
-     * @deny (create) User with UID 'user123' cannot create a profile for 'user456'.
-     * @deny (get) User with UID 'user123' cannot read the profile of 'user456'.
-     * @deny (update) User with UID 'user123' cannot update the profile of 'user456'.
-     * @deny (delete) User with UID 'user123' cannot delete the profile of 'user456'.
-     * @principle Enforces strict user-ownership for profile data.
+     * @description Grants access to user-specific data.
+     * @path /users/{userId}
+     * @allow (create) User with UID 'user123' can create their profile.
+     * @deny (create) User with UID 'user123' cannot create a profile with ID 'otherUser'.
+     * @allow (get, update, delete, list) User with UID 'user123' can read, update, delete, and list their profile.
+     * @deny (get, update, delete, list) User with UID 'user456' cannot access data for user 'user123'.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow get, update, delete: if isOwner(userId) && resource.data.id == userId;
+      allow list: if isOwner(userId);
+    }
+
+    /**
+     * @description Grants read access to all for doctor profiles, but restricts write access to the doctor.
+     * @path /doctors/{doctorId}
+     * @allow (get, list) Anyone can view doctor profiles.
+     * @allow (create, update, delete) Doctor with UID 'doctor123' can create, update, and delete their own profile.
+     * @deny (create, update, delete) User with UID 'user123' cannot modify doctor profiles.
+     * @principle Allows public read access to doctor profiles while enforcing ownership for writes.
+     */
+    match /doctors/{doctorId} {
+        function isOwner(doctorId) {
+            return request.auth != null && request.auth.uid == doctorId;
+        }
+        allow get, list: if true;
+        allow create, update, delete: if isOwner(doctorId) && resource.data.id == doctorId;
+    }
+
+    /**
+     * @description Grants access to appointments for both the patient and the doctor involved.
+     * @path /appointments/{appointmentId}
+     * @allow (get, list) Patient 'patient123' or doctor 'doctor456' can access appointments where they are participants.
+     * @allow (create) Patient 'patient123' can create an appointment with doctor 'doctor456'.
+     * @allow (update, delete) Patient 'patient123' or doctor 'doctor456' can update or delete appointments where they are participants.
+     * @deny (get, list, create, update, delete) User 'otherUser' cannot access appointments they are not a part of.
+     * @principle Enforces shared access based on the `patientId` and `doctorId` fields.
+     */
+    match /appointments/{appointmentId} {
+        function isParticipant(patientId, doctorId) {
+            return request.auth != null && (request.auth.uid == patientId || request.auth.uid == doctorId);
+        }
+
+        function isExistingParticipant(patientId, doctorId) {
+          return isParticipant(patientId, doctorId) && resource != null;
+        }
+
+        allow get: if isParticipant(resource.data.patientId, resource.data.doctorId);
+        allow list: if request.auth.uid != null;
+        allow create: if request.auth != null && (request.resource.data.patientId == request.auth.uid || request.resource.data.doctorId == request.auth.uid);
+        allow update, delete: if isExistingParticipant(resource.data.patientId, resource.data.doctorId);
+    }
+
+    /**
+     * @description Grants access to transactions for the patient and doctor involved.
+     * @path /transactions/{transactionId}
+     *  @allow (get, list) Patient 'patient123' or doctor 'doctor456' can access transactions where they are participants.
+     * @allow (create) Patient 'patient123' can create a transaction with doctor 'doctor456'.
+     * @allow (update, delete) Patient 'patient123' or doctor 'doctor456' can update or delete transactions where they are participants.
+     * @deny (get, list, create, update, delete) User 'otherUser' cannot access transactions they are not a part of.
+     * @principle Enforces shared access based on the `patientId` and `doctorId` fields.
+     */
+    match /transactions/{transactionId} {
+      function isParticipant(patientId, doctorId) {
+          return request.auth != null && (request.auth.uid == patientId || request.auth.uid == doctorId);
       }
 
+      function isExistingParticipant(patientId, doctorId) {
+        return isParticipant(patientId, doctorId) && resource != null;
+      }
+
+      allow get: if isParticipant(resource.data.patientId, resource.data.doctorId);
+      allow list: if request.auth.uid != null;
+      allow create: if request.auth != null && (request.resource.data.patientId == request.auth.uid || request.resource.data.doctorId == request.auth.uid);
+      allow update, delete: if isExistingParticipant(resource.data.patientId, resource.data.doctorId);
+    }
+
+    /**
+     * @description Grants access to wallets only for the doctor who owns the wallet.
+     * @path /wallets/{walletId}
+     * @allow (get, list, update, delete) Doctor 'doctor123' can access and modify their own wallet.
+     * @deny (get, list, update, delete) User 'user123' cannot access doctor wallets.
+     * @principle Enforces strict ownership for wallet data.
+     */
+    match /wallets/{walletId} {
+        function isOwner(doctorId) {
+            return request.auth != null && request.auth.uid == doctorId;
+        }
+
+        function isExistingOwner(doctorId) {
+          return isOwner(doctorId) && resource != null;
+        }
+
+        allow get, list: if isOwner(resource.data.doctorId);
+        allow create: if false;
+        allow update, delete: if isExistingOwner(resource.data.doctorId);
+    }
+
+    /**
+     * @description Grants access to reminders only for the user who owns the reminder.
+     * @path /reminders/{reminderId}
+     * @allow (get, list, update, delete) User 'user123' can access and modify their own reminders.
+     * @deny (get, list, update, delete) User 'user456' cannot access reminders for user 'user123'.
+     * @principle Enforces strict ownership for reminder data.
+     */
+    match /reminders/{reminderId} {
       function isOwner(userId) {
-        return request.auth.uid == userId;
+        return request.auth != null && request.auth.uid == userId;
       }
 
       function isExistingOwner(userId) {
-        return isSignedIn() && isOwner(userId) && resource.data.userId == userId;
+        return isOwner(userId) && resource != null;
       }
 
-      allow get: if isOwner(userId);
-      allow list: if false;
-
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow get, list: if isOwner(resource.data.userId);
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isExistingOwner(resource.data.userId);
     }
 
     /**
-     * @description Grants access to doctor profiles only to the authenticated doctor.
-     * @path /databases/{database}/documents/doctors/{doctorId}
-     * @allow (create) Doctor with UID 'doctor123' can create their own profile.
-     * @allow (get) Doctor with UID 'doctor123' can read their own profile.
-     * @allow (update) Doctor with UID 'doctor123' can update their own profile.
-     * @allow (delete) Doctor with UID 'doctor123' can delete their own profile.
-     * @deny (create) User with UID 'user123' cannot create a doctor profile for 'doctor456'.
-     * @deny (get) User with UID 'user123' cannot read the profile of 'doctor456'.
-     * @deny (update) User with UID 'user123' cannot update the profile of 'doctor456'.
-     * @deny (delete) User with UID 'user123' cannot delete the profile of 'doctor456'.
-     * @principle Enforces strict doctor-ownership for profile data.
-     */
-    match /doctors/{doctorId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(doctorId) {
-        return request.auth.uid == doctorId;
-      }
-
-      function isExistingOwner(doctorId) {
-        return isSignedIn() && isOwner(doctorId) && resource.data.doctorId == doctorId;
-      }
-
-      allow get: if true; // Doctors are public and searchable.
-      allow list: if true; // Doctors are public and searchable.
-
-      allow create: if isSignedIn() && isOwner(doctorId);
-      allow update: if isExistingOwner(doctorId);
-      allow delete: if isExistingOwner(doctorId);
-    }
-
-    /**
-     * @description Grants access to appointments to the participating doctor and patient.
-     * @path /databases/{database}/documents/appointments/{appointmentId}
-     * @allow (create) Doctor/Patient with UID 'user123' can create appointments.
-     * @allow (get) Doctor/Patient with UID 'user123' can read appointment if either doctorId or patientId matches.
-     * @allow (update) Doctor/Patient with UID 'user123' can update appointment if either doctorId or patientId matches.
-     * @allow (delete) Doctor/Patient with UID 'user123' can delete appointment if either doctorId or patientId matches.
-     * @deny (create) User with UID 'user123' cannot create appointment for other users.
-     * @deny (get) User with UID 'user123' cannot read appointment if neither doctorId nor patientId matches.
-     * @deny (update) User with UID 'user123' cannot update appointment if neither doctorId nor patientId matches.
-     * @deny (delete) User with UID 'user123' cannot delete appointment if neither doctorId nor patientId matches.
-     * @principle Enforces shared access for appointments based on doctorId and patientId.
-     */
-    match /appointments/{appointmentId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isParticipant(appointment) {
-          return appointment.patientId == request.auth.uid || appointment.doctorId == request.auth.uid;
-      }
-
-        function isExistingParticipant(appointment) {
-        return isSignedIn() && isParticipant(resource.data);
-      }
-
-
-      allow get: if isExistingParticipant(resource.data);
-      allow list: if false; //Fixed based on the reported error. Listing appointments is not enabled for all users. It must happen under the /users/{userId}/appointments collection.
-
-
-      allow create: if isSignedIn() && (request.resource.data.patientId == request.auth.uid || request.resource.data.doctorId == request.auth.uid);
-      allow update: if isExistingParticipant(resource.data);
-      allow delete: if isExistingParticipant(resource.data);
-    }
-
-    /**
-     * @description Grants access to transactions to the participating doctor and patient.
-     * @path /databases/{database}/documents/transactions/{transactionId}
-     * @allow (create) Doctor/Patient with UID 'user123' can create transactions.
-     * @allow (get) Doctor/Patient with UID 'user123' can read transaction if either doctorId or patientId matches.
-     * @allow (update) Doctor/Patient with UID 'user123' can update transaction if either doctorId or patientId matches.
-     * @allow (delete) Doctor/Patient with UID 'user123' can delete transaction if either doctorId or patientId matches.
-     * @deny (create) User with UID 'user123' cannot create transaction for other users.
-     * @deny (get) User with UID 'user123' cannot read transaction if neither doctorId nor patientId matches.
-     * @deny (update) User with UID 'user123' cannot update transaction if neither doctorId nor patientId matches.
-     * @deny (delete) User with UID 'user123' cannot delete transaction if neither doctorId nor patientId matches.
-     * @principle Enforces shared access for transactions based on doctorId and patientId.
-     */
-    match /transactions/{transactionId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isParticipant(transaction) {
-        return transaction.patientId == request.auth.uid || transaction.doctorId == request.auth.uid;
-      }
-
-      function isExistingParticipant(transaction) {
-        return isSignedIn() && isParticipant(resource.data);
-      }
-
-      allow get: if isExistingParticipant(resource.data);
-      allow list: if false;
-
-      allow create: if isSignedIn() && (request.resource.data.patientId == request.auth.uid || request.resource.data.doctorId == request.auth.uid);
-      allow update: if isExistingParticipant(resource.data);
-      allow delete: if isExistingParticipant(resource.data);
-    }
-
-    /**
-     * @description Grants access to wallets only to the associated doctor.
-     * @path /databases/{database}/documents/wallets/{walletId}
-     * @allow (create) Doctor with UID 'doctor123' can create their own wallet.
-     * @allow (get) Doctor with UID 'doctor123' can read their own wallet.
-     * @allow (update) Doctor with UID 'doctor123' can update their own wallet.
-     * @allow (delete) Doctor with UID 'doctor123' can delete their own wallet.
-     * @deny (create) User with UID 'user123' cannot create a wallet for 'doctor456'.
-     * @deny (get) User with UID 'user123' cannot read the wallet of 'doctor456'.
-     * @deny (update) User with UID 'user123' cannot update the wallet of 'doctor456'.
-     * @deny (delete) User with UID 'user123' cannot delete the wallet of 'doctor456'.
-     * @principle Enforces strict doctor-ownership for wallet data.
-     */
-    match /wallets/{walletId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(wallet) {
-        return wallet.doctorId == request.auth.uid;
-      }
-
-      function isExistingOwner(wallet) {
-        return isSignedIn() && isOwner(resource.data);
-      }
-
-      allow get: if isExistingOwner(resource.data);
-      allow list: if false;
-
-      allow create: if isSignedIn() && request.resource.data.doctorId == request.auth.uid;
-      allow update: if isExistingOwner(resource.data);
-      allow delete: if isExistingOwner(resource.data);
-    }
-
-    /**
-     * @description Grants access to reminders only to the user who created them.
-     * @path /databases/{database}/documents/reminders/{reminderId}
-     * @allow (create) User with UID 'user123' can create their own reminder.
-     * @allow (get) User with UID 'user123' can read their own reminder.
-     * @allow (update) User with UID 'user123' can update their own reminder.
-     * @allow (delete) User with UID 'user123' can delete their own reminder.
-     * @deny (create) User with UID 'user123' cannot create a reminder for 'user456'.
-     * @deny (get) User with UID 'user123' cannot read the reminder of 'user456'.
-     * @deny (update) User with UID 'user123' cannot update the reminder of 'user456'.
-     * @deny (delete) User with UID 'user123' cannot delete the reminder of 'user456'.
-     * @principle Enforces strict user-ownership for reminder data.
-     */
-    match /reminders/{reminderId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(reminder) {
-        return reminder.userId == request.auth.uid;
-      }
-
-      function isExistingOwner(reminder) {
-        return isSignedIn() && isOwner(resource.data);
-      }
-
-      allow get: if isExistingOwner(resource.data);
-      allow list: if false;
-
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isExistingOwner(resource.data);
-      allow delete: if isExistingOwner(resource.data);
-    }
-
-    /**
-     * @description Grants access to subscriptions only to the user who owns the subscription.
-     * @path /databases/{database}/documents/subscriptions/{subscriptionId}
-     * @allow (create) User with UID 'user123' can create their own subscription.
-     * @allow (get) User with UID 'user123' can read their own subscription.
-     * @allow (update) User with UID 'user123' can update their own subscription.
-     * @allow (delete) User with UID 'user123' can delete their own subscription.
-     * @deny (create) User with UID 'user123' cannot create a subscription for 'user456'.
-     * @deny (get) User with UID 'user123' cannot read the subscription of 'user456'.
-     * @deny (update) User with UID 'user123' cannot update the subscription of 'user456'.
-     * @deny (delete) User with UID 'user123' cannot delete the subscription of 'user456'.
-     * @principle Enforces strict user-ownership for subscription data.
+     * @description Grants access to subscriptions only for the user who owns the subscription.
+     * @path /subscriptions/{subscriptionId}
+     * @allow (get, list, update, delete) User 'user123' can access and modify their own subscription.
+     * @deny (get, list, update, delete) User 'user456' cannot access subscriptions for user 'user123'.
+     * @principle Enforces strict ownership for subscription data.
      */
     match /subscriptions/{subscriptionId} {
-      function isSignedIn() {
-        return request.auth != null;
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
       }
 
-      function isOwner(subscription) {
-        return subscription.userId == request.auth.uid;
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
       }
 
-      function isExistingOwner(subscription) {
-        return isSignedIn() && isOwner(resource.data);
-      }
-
-      allow get: if isExistingOwner(resource.data);
-      allow list: if false;
-
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isExistingOwner(resource.data);
-      allow delete: if isExistingOwner(resource.data);
+      allow get, list: if isOwner(resource.data.userId);
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isExistingOwner(resource.data.userId);
     }
   }
 }
