@@ -57,8 +57,12 @@ export default function DoctorSignupPage() {
       password: "",
       confirmPassword: "",
       phone: "",
+      specialization: undefined,
+      licenseNumber: "",
       experience: 0,
-      clinicName: ""
+      clinicName: "",
+      document: undefined,
+      terms: false,
     }
   });
 
