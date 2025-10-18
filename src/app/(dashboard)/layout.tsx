@@ -109,8 +109,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <Sidebar>
             <SidebarHeader>
                 <div className="flex items-center gap-2">
-                    <Logo />
-                    <span className="font-headline font-semibold text-lg group-data-[collapsible=icon]:hidden">HealthSphere</span>
+                    <Logo className="w-32" />
                 </div>
             </SidebarHeader>
             <SidebarContent className="p-2">

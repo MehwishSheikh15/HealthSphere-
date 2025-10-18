@@ -16,10 +16,7 @@ export function Navbar() {
       <div className="container flex h-16 items-center">
         <div className="mr-4 hidden md:flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
-            <Logo />
-            <span className="hidden font-bold sm:inline-block font-headline">
-              HealthSphere
-            </span>
+            <Logo className="w-40" />
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
             {navLinks.map((link) => (
@@ -46,8 +43,7 @@ export function Navbar() {
           </SheetTrigger>
           <SheetContent side="left">
             <Link href="/" className="mr-6 flex items-center space-x-2">
-              <Logo />
-              <span className="font-bold font-headline">HealthSphere</span>
+              <Logo className="w-40" />
             </Link>
             <div className="mt-6 flex flex-col space-y-4">
               {navLinks.map((link) => (
