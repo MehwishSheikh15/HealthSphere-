@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,7 +81,7 @@ export default function AiToolsPage() {
       const result = await checkMedicine({ photoDataUri });
       setMedicineResult(result);
     } catch (error) {
-      console-error("Medicine check failed:", error);
+      console.error("Medicine check failed:", error);
       toast({ variant: 'destructive', title: "Check Failed", description: "Could not identify the medicine. Please try again." });
     }
     setLoading(prev => ({ ...prev, medicine: false }));
