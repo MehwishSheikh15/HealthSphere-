@@ -86,7 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         title: "Logged Out",
         description: "You have been successfully logged out.",
     })
-    router.push('/auth/login');
+    router.push('/');
   };
 
   React.useEffect(() => {
