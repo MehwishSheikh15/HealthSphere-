@@ -69,7 +69,7 @@ export default function DoctorSignupPage() {
       confirmPassword: "",
       phone: "",
       specialization: undefined,
-      licenseNumber: "",
+      licenseNumber: "PMC-12345",
       experience: 0,
       clinicName: "",
       document: undefined,
@@ -88,12 +88,13 @@ export default function DoctorSignupPage() {
 
         toast({
             title: "Verifying Document...",
-            description: "Our AI is verifying your license. Please wait.",
+            description: "Our AI is verifying your license with the PMDC. Please wait.",
         });
 
         const verificationResult = await verifyDoctorDocuments({
             documentDataUri,
-            adminInstructions: `Verify the medical license for Dr. ${values.fullName}, specializing in ${values.specialization}. License number provided: ${values.licenseNumber}.`,
+            licenseNumber: values.licenseNumber,
+            adminInstructions: `Verify the medical license for Dr. ${values.fullName}, specializing in ${values.specialization}.`,
         });
 
         if (verificationResult.verificationScore < 75) {
@@ -121,7 +122,7 @@ export default function DoctorSignupPage() {
         experience: values.experience,
         location: "",
         isVerified: true,
-        verificationStatus: 'Verified by AI',
+        verificationStatus: 'Verified by AI & PMDC',
         createdAt: new Date().toISOString(),
       });
       
@@ -167,7 +168,7 @@ export default function DoctorSignupPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Verification Failed</AlertDialogTitle>
             <AlertDialogDescription>
-              We could not verify your medical license with the document provided. Please ensure the document is clear and the license number is correct, then try again.
+              We could not verify your medical license. This could be because the license number was not found in the PMDC registry or the uploaded document was unclear. Please double-check your details and try again.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
