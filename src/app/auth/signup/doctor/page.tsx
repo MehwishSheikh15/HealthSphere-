@@ -112,6 +112,7 @@ export default function DoctorSignupPage() {
       const doctorDocRef = doc(firestore, "doctors", user.uid);
       await setDoc(doctorDocRef, {
         id: user.uid,
+        uid: user.uid,
         name: `Dr. ${values.fullName}`,
         email: values.email,
         phone: values.phone,
@@ -246,5 +247,3 @@ export default function DoctorSignupPage() {
     </>
   );
 }
-
-    
