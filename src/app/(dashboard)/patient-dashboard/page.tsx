@@ -14,6 +14,9 @@ import {
   FileText,
   Bell,
   Stethoscope,
+  ShieldQuestion,
+  FileScan,
+  Pill,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useUser } from '@/firebase';
@@ -23,8 +26,8 @@ export default function PatientDashboardPage() {
 
   const features = [
     {
-      title: 'AI Assistant',
-      description: 'Ask questions and get information about HealthSphere.',
+      title: 'AI Health Tools',
+      description: 'Use our AI to check skin conditions, identify medicine, and more.',
       href: '/patient-dashboard/ai-tools',
       icon: BrainCircuit,
     },
@@ -52,21 +55,45 @@ export default function PatientDashboardPage() {
       href: '/patient-dashboard/subscriptions',
       icon: FileText,
     },
+    {
+      title: 'Settings',
+      description: 'Update your profile and notification settings.',
+      href: '/patient-dashboard/settings',
+      icon: FileText,
+    },
   ];
+  
+  const healthQuotes = [
+    "The greatest wealth is health.",
+    "A healthy outside starts from the inside.",
+    "To keep the body in good health is a duty... otherwise we shall not be able to keep our mind strong and clear.",
+    "He who has health has hope; and he who has hope, has everything."
+  ];
+
+  const randomQuote = healthQuotes[Math.floor(Math.random() * healthQuotes.length)];
+
 
   return (
     <div className="space-y-6">
-      {/* Dashboard Header */}
-      <header>
-        <h1 className="font-headline text-3xl font-bold">
-          Welcome, {user?.displayName || 'Patient'}!
-        </h1>
-        <p className="text-muted-foreground">
-          Here&apos;s a quick overview of your HealthSphere account.
-        </p>
+      <header className='space-y-4'>
+        <div>
+          <h1 className="font-headline text-3xl font-bold">
+            Welcome, {user?.displayName || 'Patient'}!
+          </h1>
+          <p className="text-muted-foreground">
+            Here&apos;s a quick overview of your HealthSphere account.
+          </p>
+        </div>
+        <Card>
+            <CardHeader>
+                <CardTitle>Health Tip of the Day</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p className='text-muted-foreground'>{randomQuote}</p>
+            </CardContent>
+        </Card>
       </header>
 
-      {/* Feature Cards Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {features.map((feature) => (
           <Card
