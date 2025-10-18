@@ -1,12 +1,20 @@
+'use client';
+
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, BrainCircuit, HeartPulse, Pill, Salad, Scan, FileText } from 'lucide-react';
+import { ArrowRight, BrainCircuit, HeartPulse, Pill, Salad, Scan, FileText, Bot, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { DoctorCard } from '@/components/shared/doctor-card';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from '@/components/ui/input';
+import { getLoginAssistantResponse, type ChatMessage } from "@/ai/flows/login-assistant-flow";
+import { useToast } from "@/hooks/use-toast";
 
 const aiFeatures = [
   {
@@ -43,33 +51,130 @@ const aiFeatures = [
 
 const doctors = [
   {
+    id: "jalal-ahmed",
     name: "Dr. Jalal Ahmed",
     specialization: "Cardiologist",
     rating: 4.8,
-    image: PlaceHolderImages[1],
+    image: PlaceHolderImages.find(p => p.id === 'doctor-1')!,
+    isVerified: true,
+    feePKR: 1500,
   },
   {
+    id: "ayesha-khan",
     name: "Dr. Ayesha Khan",
     specialization: "Dermatologist",
     rating: 4.9,
-    image: PlaceHolderImages[2],
+    image: PlaceHolderImages.find(p => p.id === 'doctor-2')!,
+    isVerified: true,
+    feePKR: 2000,
   },
   {
+    id: "farhan-butt",
     name: "Dr. Farhan Butt",
     specialization: "Pediatrician",
     rating: 4.7,
-    image: PlaceHolderImages[3],
+    image: PlaceHolderImages.find(p => p.id === 'doctor-3')!,
+    isVerified: true,
+    feePKR: 1200,
   },
    {
+    id: "mehwish-sheikh",
     name: "Dr. Mehwish Sheikh",
     specialization: "Psychologist",
     rating: 5.0,
-    image: PlaceHolderImages[4],
+    image: PlaceHolderImages.find(p => p.id === 'doctor-4')!,
+    isVerified: true,
+    feePKR: 2500,
   },
 ];
 
+function AiAgentChat() {
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([
+    { role: 'model', content: "Hello! I'm the HealthSphere AI Assistant. How can I help you learn about our features or get you started with signing up?" }
+  ]);
+  const [chatInput, setChatInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleChat = async () => {
+    if (!chatInput.trim()) return;
+    
+    const newUserMessage: ChatMessage = { role: 'user', content: chatInput };
+    const newHistory = [...chatHistory, newUserMessage];
+    setChatHistory(newHistory);
+    setChatInput("");
+    setLoading(true);
+
+    try {
+      const result = await getLoginAssistantResponse({ chatHistory: newHistory });
+      const newModelMessage: ChatMessage = { role: 'model', content: result.response };
+      setChatHistory([...newHistory, newModelMessage]);
+    } catch (error) {
+      console.error("AI Assistant chat failed:", error);
+      toast({ variant: 'destructive', title: "Chat Failed", description: "The AI is unable to respond right now." });
+      const errorMessage: ChatMessage = { role: 'model', content: "I'm sorry, I can't respond at the moment." };
+      setChatHistory([...newHistory, errorMessage]);
+    }
+    setLoading(false);
+  };
+
+  return (
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Bot /> AI Assistant</DialogTitle>
+          <DialogDescription>
+            Ask me anything about HealthSphere's features, pricing, or how to get started.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col h-[50vh]">
+            <ScrollArea className="flex-1 p-4 border rounded-md bg-muted/20">
+            <div className="space-y-4">
+                {chatHistory.map((msg, index) => (
+                <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-sm p-3 rounded-lg ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-background'}`}>
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                    </div>
+                </div>
+                ))}
+                {loading && (
+                    <div className="flex justify-start">
+                    <div className="max-w-md p-3 rounded-lg bg-background">
+                        <p>Thinking...</p>
+                    </div>
+                </div>
+                )}
+            </div>
+            </ScrollArea>
+            <div className="mt-4 flex gap-2">
+            <Input 
+                value={chatInput} 
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Ask a question..."
+                onKeyDown={(e) => e.key === 'Enter' && !loading && handleChat()}
+                disabled={loading}
+            />
+            <Button onClick={handleChat} disabled={loading}>
+                <Send className="h-4 w-4" />
+            </Button>
+            </div>
+        </div>
+      </DialogContent>
+  );
+}
+
+
 export default function Home() {
   const heroImage = PlaceHolderImages.find(p => p.id === 'hero-image');
+
+  const healthQuotes = [
+    "The greatest wealth is health.",
+    "A healthy outside starts from the inside.",
+    "To keep the body in good health is a duty... otherwise we shall not be able to keep our mind strong and clear.",
+    "He who has health has hope; and he who has hope, has everything."
+  ];
+
+  const randomQuote = healthQuotes[Math.floor(Math.random() * healthQuotes.length)];
+
 
   return (
     <div className="relative flex min-h-screen flex-col">
@@ -160,7 +265,7 @@ export default function Home() {
             </div>
             <div className="flex justify-center">
               <Button asChild>
-                  <Link href="#">
+                  <Link href="/patient-dashboard/find-a-doctor">
                       View All Doctors
                   </Link>
               </Button>
@@ -189,6 +294,20 @@ export default function Home() {
         </section>
       </main>
       <Footer />
+
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button
+            variant="default"
+            size="icon"
+            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
+          >
+            <Bot className="h-6 w-6" />
+            <span className="sr-only">Open AI Assistant</span>
+          </Button>
+        </DialogTrigger>
+        <AiAgentChat />
+      </Dialog>
     </div>
   );
 }
