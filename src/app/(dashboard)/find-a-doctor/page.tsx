@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DoctorCard } from '@/components/shared/doctor-card';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Search, MapPin, Video } from 'lucide-react';
-import Link from 'next/link';
 
 const doctors = [
   {

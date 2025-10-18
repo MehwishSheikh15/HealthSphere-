@@ -11,36 +11,44 @@ import Link from 'next/link';
 
 const doctors = [
   {
+    id: "jalal-ahmed",
     name: "Dr. Jalal Ahmed",
     specialization: "Cardiologist",
     rating: 4.8,
     image: PlaceHolderImages.find(p => p.id === 'doctor-1')!,
     location: "Karachi",
     isVerified: true,
+    feePKR: 1500,
   },
   {
+    id: "ayesha-khan",
     name: "Dr. Ayesha Khan",
     specialization: "Dermatologist",
     rating: 4.9,
     image: PlaceHolderImages.find(p => p.id === 'doctor-2')!,
     location: "Lahore",
     isVerified: true,
+    feePKR: 2000,
   },
   {
+    id: "farhan-butt",
     name: "Dr. Farhan Butt",
     specialization: "Pediatrician",
     rating: 4.7,
     image: PlaceHolderImages.find(p => p.id === 'doctor-3')!,
     location: "Islamabad",
     isVerified: true,
+    feePKR: 1200,
   },
    {
+    id: "mehwish-sheikh",
     name: "Dr. Mehwish Sheikh",
     specialization: "Psychologist",
     rating: 5.0,
     image: PlaceHolderImages.find(p => p.id === 'doctor-4')!,
     location: "Karachi",
     isVerified: true,
+    feePKR: 2500,
   },
 ];
 
@@ -104,9 +112,7 @@ export default function FindDoctorPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredDoctors.map((doctor, index) => (
-          <Link key={index} href={`#`} passHref>
-              <DoctorCard {...doctor} />
-          </Link>
+          <DoctorCard key={index} {...doctor} />
         ))}
       </div>
       {filteredDoctors.length === 0 && (
