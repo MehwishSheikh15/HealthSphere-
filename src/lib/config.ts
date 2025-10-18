@@ -1,86 +1,86 @@
 import { type NavItem, type Role } from '@/lib/types';
-import { LayoutDashboard, Stethoscope, User, Calendar, Wallet, ShieldCheck, BarChart, Settings, Bot } from 'lucide-react';
+import { LayoutDashboard, User, Calendar, Wallet, ShieldCheck, BarChart, Settings, Bot } from 'lucide-react';
 
 export const navItems: Record<Role, NavItem[]> = {
   patient: [
     {
       title: 'Dashboard',
       href: '/patient-dashboard',
-      icon: <LayoutDashboard className="h-4 w-4" />,
+      icon: LayoutDashboard,
     },
     {
       title: 'Appointments',
       href: '/patient-dashboard/appointments',
-      icon: <Calendar className="h-4 w-4" />,
+      icon: Calendar,
     },
     {
       title: 'AI Tools',
       href: '/patient-dashboard/ai-tools',
-      icon: <Bot className="h-4 w-4" />,
+      icon: Bot,
     },
     {
       title: 'Reminders',
       href: '/patient-dashboard/reminders',
-      icon: <Calendar className="h-4 w-4" />,
+      icon: Calendar,
     },
     {
       title: 'Subscriptions',
       href: '/patient-dashboard/subscriptions',
-      icon: <Wallet className="h-4 w-4" />,
+      icon: Wallet,
     },
      {
       title: 'Settings',
       href: '/patient-dashboard/settings',
-      icon: <Settings className="h-4 w-4" />,
+      icon: Settings,
     },
   ],
   doctor: [
     {
       title: 'Dashboard',
       href: '/doctor-dashboard',
-      icon: <LayoutDashboard className="h-4 w-4" />,
+      icon: LayoutDashboard,
     },
     {
       title: 'Requests',
       href: '/doctor-dashboard/requests',
-      icon: <User className="h-4 w-4" />,
+      icon: User,
     },
     {
       title: 'Appointments',
       href: '/doctor-dashboard/appointments',
-      icon: <Calendar className="h-4 w-4" />,
+      icon: Calendar,
     },
     {
       title: 'Wallet',
       href: '/doctor-dashboard/wallet',
-      icon: <Wallet className="h-4 w-4" />,
+      icon: Wallet,
     },
     {
       title: 'Reminders',
       href: '/doctor-dashboard/reminders',
-      icon: <Calendar className="h-4 w-4" />,
+      icon: Calendar,
     },
     {
       title: 'Settings',
       href: '/doctor-dashboard/settings',
-      icon: <Settings className="h-4 w-4" />,
+      icon: Settings,
     },
   ],
   admin: [
     {
       title: 'Dashboard',
       href: '/admin-panel',
-      icon: <LayoutDashboard className="h-4 w-4" />,
+      icon: LayoutDashboard,
     },
     {
       title: 'Verifications',
       href: '/admin-panel/verifications',
-      icon: <ShieldCheck className="h-4 w-4" />,
+      icon: ShieldCheck,
     },
     {
       title: 'Analytics',
       href: '/admin-panel/analytics',
-      icon: <BarChart className="h-4 w-4" />,
+      icon: BarChart,
     },
   ],
 };

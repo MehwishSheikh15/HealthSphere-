@@ -50,19 +50,22 @@ function ModernDashboardNav() {
 
   return (
      <SidebarMenu>
-        {currentNavItems.map((item, index) => (
-          <SidebarMenuItem key={index}>
-            <Link href={item.href}>
-              <SidebarMenuButton 
-                isActive={pathname === item.href} 
-                tooltip={{ children: item.title, hidden: open }}
-              >
-                  {item.icon}
-                  <span>{item.title}</span>
-              </SidebarMenuButton>
-            </Link>
-          </SidebarMenuItem>
-        ))}
+        {currentNavItems.map((item, index) => {
+          const Icon = item.icon;
+          return (
+            <SidebarMenuItem key={index}>
+              <Link href={item.href}>
+                <SidebarMenuButton 
+                  isActive={pathname === item.href} 
+                  tooltip={{ children: item.title, hidden: open }}
+                >
+                    <Icon className="h-4 w-4" />
+                    <span>{item.title}</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+          )
+        })}
       </SidebarMenu>
   );
 }
