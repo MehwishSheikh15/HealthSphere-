@@ -136,8 +136,8 @@ export default function DoctorSignupPage() {
 
 
       toast({
-        title: "Application Submitted!",
-        description: "Your registration has been successfully verified by our AI.",
+        title: "License Verified & Account Created!",
+        description: "Your registration was successful. Redirecting to your dashboard.",
       });
       router.push("/doctor-dashboard");
 
@@ -246,3 +246,5 @@ export default function DoctorSignupPage() {
     </>
   );
 }
+
+    
