@@ -1,5 +1,7 @@
+
 'use client';
 
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,7 +11,7 @@ import { collection, query, where } from "firebase/firestore";
 import type { Appointment } from "@/lib/types";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
-
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 const getStatusVariant = (status: string) => {
   switch (status.toLowerCase()) {
@@ -26,8 +28,7 @@ const getStatusVariant = (status: string) => {
   }
 };
 
-
-function AppointmentCard({ appt }: { appt: Appointment }) {
+function AppointmentCard({ appt, onFeatureClick }: { appt: Appointment, onFeatureClick: () => void }) {
     const isActionable = appt.status === 'Confirmed';
     const isPast = appt.status === 'Completed' || appt.status === 'Cancelled';
 
@@ -49,11 +50,11 @@ function AppointmentCard({ appt }: { appt: Appointment }) {
             <CardFooter className="flex justify-end gap-2">
                 {isActionable ? (
                     <>
-                        <Button variant="outline" size="sm" asChild>
-                            <Link href={`/patient-dashboard/messages/${appt.id}`}><MessageSquare className="mr-2 h-4 w-4"/>Message</Link>
+                        <Button variant="outline" size="sm" onClick={onFeatureClick}>
+                            <MessageSquare className="mr-2 h-4 w-4"/>Message
                         </Button>
-                        <Button size="sm" disabled={!appt.videoLink} asChild>
-                           <a href={appt.videoLink} target="_blank" rel="noopener noreferrer"><Video className="mr-2 h-4 w-4"/>Join Call</a>
+                        <Button size="sm" onClick={onFeatureClick}>
+                           <Video className="mr-2 h-4 w-4"/>Join Call
                         </Button>
                     </>
                 ) : isPast ? (
@@ -92,10 +93,10 @@ function AppointmentSkeleton() {
     );
 }
 
-
 export default function PatientAppointmentsPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
+    const [isFeatureUnavailableOpen, setIsFeatureUnavailableOpen] = useState(false);
 
     const appointmentsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
@@ -111,6 +112,16 @@ export default function PatientAppointmentsPage() {
 
   return (
     <div>
+       <Dialog open={isFeatureUnavailableOpen} onOpenChange={setIsFeatureUnavailableOpen}>
+        <DialogContent>
+            <DialogHeader>
+            <DialogTitle>Feature Not Available</DialogTitle>
+            <DialogDescription>
+                This feature is currently under development and will be available soon.
+            </DialogDescription>
+            </DialogHeader>
+        </DialogContent>
+      </Dialog>
       <h1 className="text-3xl font-bold tracking-tight mb-6 font-headline">Your Appointments</h1>
       
       <section className="space-y-4">
@@ -122,7 +133,7 @@ export default function PatientAppointmentsPage() {
              </div>
          ) : upcomingAppointments.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {upcomingAppointments.map(appt => <AppointmentCard key={appt.id} appt={appt} />)}
+              {upcomingAppointments.map(appt => <AppointmentCard key={appt.id} appt={appt} onFeatureClick={() => setIsFeatureUnavailableOpen(true)} />)}
             </div>
          ) : (
             <p className="text-muted-foreground">You have no upcoming appointments. <Link href="/patient-dashboard/find-a-doctor" className="text-primary underline">Find a doctor</Link> to book one.</p>
@@ -137,7 +148,7 @@ export default function PatientAppointmentsPage() {
             </div>
         ) : pastAppointments.length > 0 ? (
            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {pastAppointments.map(appt => <AppointmentCard key={appt.id} appt={appt} />)}
+              {pastAppointments.map(appt => <AppointmentCard key={appt.id} appt={appt} onFeatureClick={() => setIsFeatureUnavailableOpen(true)} />)}
             </div>
         ) : (
             <p className="text-muted-foreground">You have no past appointments.</p>
