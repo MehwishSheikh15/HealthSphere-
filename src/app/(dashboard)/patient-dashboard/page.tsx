@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function PatientDashboardPage() {
@@ -36,8 +37,9 @@ export default function PatientDashboardPage() {
         <CardHeader>
             <CardTitle>Your Health Journey</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
             <p>This is where your main dashboard content will go. You can view summaries of your health, recent activities, and quick links to other sections.</p>
+            <Button>Pay Doctor's Fee</Button>
         </CardContent>
       </Card>
     </div>

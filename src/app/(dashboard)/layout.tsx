@@ -1,8 +1,7 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useSidebar, SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Logo } from '@/components/layout/logo';
@@ -12,7 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, ChevronDown } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useUser } from '@/firebase';
+import { useUser, useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
 // This would come from your auth context in a real app
 const useUserRole = (): Role => {
@@ -69,6 +70,38 @@ function ModernDashboardNav() {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const userDisplay = useUserDisplay();
   const role = useUserRole();
+  const auth = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
+  const { user, isUserLoading } = useUser();
+
+  const handleLogout = () => {
+    if (!auth) return;
+    signOut(auth);
+    toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+    })
+    router.push('/auth/login');
+  };
+
+  React.useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.replace('/auth/login');
+    }
+  }, [isUserLoading, user, router]);
+
+  if (isUserLoading) {
+    return (
+        <div className="flex items-center justify-center min-h-screen">
+            <p>Loading dashboard...</p>
+        </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
   
   return (
     <SidebarProvider>
@@ -101,7 +134,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 mb-2" align="end" forceMount>
-                   <DropdownMenuItem>
+                   <DropdownMenuItem onClick={handleLogout}>
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Log out</span>
                     </DropdownMenuItem>
