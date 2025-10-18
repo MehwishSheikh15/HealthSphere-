@@ -24,3 +24,13 @@ export type Appointment = {
     symptoms: string;
     createdAt: string;
 };
+
+export type Reminder = {
+    id: string;
+    userId: string;
+    type: 'medication' | 'appointment';
+    title: string;
+    time: string; // ISO string for time
+    message: string;
+    createdAt: string;
+}
