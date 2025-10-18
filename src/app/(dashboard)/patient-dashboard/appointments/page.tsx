@@ -4,34 +4,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Video, MessageSquare, AlertTriangle } from "lucide-react";
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from "firebase/firestore";
+import type { Appointment } from "@/lib/types";
+import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// Mock data for appointments
-const appointments = [
-  {
-    id: 'appt-1',
-    doctorName: "Dr. Jalal Ahmed",
-    specialization: "Cardiologist",
-    date: "2024-08-15",
-    time: "10:00 AM",
-    status: "Confirmed",
-  },
-  {
-    id: 'appt-2',
-    doctorName: "Dr. Ayesha Khan",
-    specialization: "Dermatologist",
-    date: "2024-08-18",
-    time: "02:00 PM",
-    status: "Pending",
-  },
-   {
-    id: 'appt-3',
-    doctorName: "Dr. Farhan Butt",
-    specialization: "Pediatrician",
-    date: "2024-07-25",
-    time: "11:00 AM",
-    status: "Completed",
-  },
-];
 
 const getStatusVariant = (status: string) => {
   switch (status.toLowerCase()) {
@@ -41,15 +19,95 @@ const getStatusVariant = (status: string) => {
       return 'secondary';
     case 'completed':
       return 'outline';
+    case 'cancelled':
+        return 'destructive';
     default:
       return 'destructive';
   }
 };
 
 
+function AppointmentCard({ appt }: { appt: Appointment }) {
+    const isActionable = appt.status === 'Confirmed';
+    const isPast = appt.status === 'Completed' || appt.status === 'Cancelled';
+
+    return (
+        <Card className={isPast ? "opacity-75" : ""}>
+            <CardHeader>
+            <div className="flex justify-between items-start">
+                <div>
+                    <CardTitle>{appt.doctorName || "Dr. Name"}</CardTitle>
+                    <CardDescription>{appt.doctorSpecialization || "Specialization"}</CardDescription>
+                </div>
+                <Badge variant={getStatusVariant(appt.status)}>{appt.status}</Badge>
+            </div>
+            </CardHeader>
+            <CardContent>
+            <p><strong>Date:</strong> {new Date(appt.scheduledAt).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p><strong>Time:</strong> {new Date(appt.scheduledAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</p>
+            </CardContent>
+            <CardFooter className="flex justify-end gap-2">
+                {isActionable ? (
+                    <>
+                        <Button variant="outline" size="sm" asChild>
+                            <Link href={`/patient-dashboard/messages/${appt.id}`}><MessageSquare className="mr-2 h-4 w-4"/>Message</Link>
+                        </Button>
+                        <Button size="sm" disabled={!appt.videoLink} asChild>
+                           <a href={appt.videoLink} target="_blank" rel="noopener noreferrer"><Video className="mr-2 h-4 w-4"/>Join Call</a>
+                        </Button>
+                    </>
+                ) : isPast ? (
+                     <>
+                        <Button variant="ghost" size="sm">View Details</Button>
+                        <Button asChild size="sm">
+                            <Link href={`/patient-dashboard/find-a-doctor/${appt.doctorId}`}>Book Again</Link>
+                        </Button>
+                    </>
+                ) : (
+                    <div className="flex items-center text-sm text-muted-foreground p-2 bg-gray-50 rounded-md">
+                        <AlertTriangle className="h-4 w-4 mr-2 text-yellow-500" />
+                        <span>Actions available after confirmation.</span>
+                    </div>
+                )}
+            </CardFooter>
+        </Card>
+    )
+}
+
+function AppointmentSkeleton() {
+    return (
+        <Card>
+            <CardHeader>
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+            </CardHeader>
+            <CardContent className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+            </CardContent>
+            <CardFooter>
+                <Skeleton className="h-10 w-24 ml-auto" />
+            </CardFooter>
+        </Card>
+    );
+}
+
+
 export default function PatientAppointmentsPage() {
-  const upcomingAppointments = appointments.filter(a => a.status === 'Confirmed' || a.status === 'Pending');
-  const pastAppointments = appointments.filter(a => a.status !== 'Confirmed' && a.status !== 'Pending');
+    const { user, isUserLoading } = useUser();
+    const firestore = useFirestore();
+
+    const appointmentsQuery = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return query(collection(firestore, 'appointments'), where('patientId', '==', user.uid));
+    }, [user, firestore]);
+
+    const { data: appointments, isLoading } = useCollection<Appointment>(appointmentsQuery);
+
+    const upcomingAppointments = appointments?.filter(a => a.status === 'Confirmed' || a.status === 'Pending') ?? [];
+    const pastAppointments = appointments?.filter(a => a.status === 'Completed' || a.status === 'Cancelled') ?? [];
+    
+    const showLoading = isLoading || isUserLoading;
 
   return (
     <div>
@@ -57,69 +115,29 @@ export default function PatientAppointmentsPage() {
       
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold">Upcoming & Pending</h2>
-         {upcomingAppointments.length > 0 ? (
+         {showLoading ? (
+             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <AppointmentSkeleton />
+                <AppointmentSkeleton />
+             </div>
+         ) : upcomingAppointments.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {upcomingAppointments.map(appt => (
-                <Card key={appt.id}>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <CardTitle>{appt.doctorName}</CardTitle>
-                            <CardDescription>{appt.specialization}</CardDescription>
-                        </div>
-                        <Badge variant={getStatusVariant(appt.status)}>{appt.status}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p><strong>Date:</strong> {new Date(appt.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                    <p><strong>Time:</strong> {appt.time}</p>
-                  </CardContent>
-                  <CardFooter className="flex justify-end gap-2">
-                    {appt.status === 'Confirmed' ? (
-                      <>
-                        <Button variant="outline" size="sm"><MessageSquare className="mr-2 h-4 w-4"/>Message</Button>
-                        <Button size="sm"><Video className="mr-2 h-4 w-4"/>Join Call</Button>
-                      </>
-                    ) : (
-                      <div className="flex items-center text-sm text-muted-foreground p-2 bg-gray-50 rounded-md">
-                          <AlertTriangle className="h-4 w-4 mr-2 text-yellow-500" />
-                          <span>Actions available after confirmation.</span>
-                      </div>
-                    )}
-                  </CardFooter>
-                </Card>
-              ))}
+              {upcomingAppointments.map(appt => <AppointmentCard key={appt.id} appt={appt} />)}
             </div>
          ) : (
-            <p className="text-muted-foreground">You have no upcoming appointments.</p>
+            <p className="text-muted-foreground">You have no upcoming appointments. <Link href="/patient-dashboard/find-a-doctor" className="text-primary underline">Find a doctor</Link> to book one.</p>
          )}
       </section>
 
       <section className="space-y-4 mt-12">
         <h2 className="text-2xl font-semibold">Past Appointments</h2>
-        {pastAppointments.length > 0 ? (
+        {showLoading ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <AppointmentSkeleton />
+            </div>
+        ) : pastAppointments.length > 0 ? (
            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {pastAppointments.map(appt => (
-                <Card key={appt.id} className="opacity-75">
-                  <CardHeader>
-                     <div className="flex justify-between items-start">
-                        <div>
-                            <CardTitle>{appt.doctorName}</CardTitle>
-                            <CardDescription>{appt.specialization}</CardDescription>
-                        </div>
-                        <Badge variant={getStatusVariant(appt.status)}>{appt.status}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p><strong>Date:</strong> {new Date(appt.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                    <p><strong>Time:</strong> {appt.time}</p>
-                  </CardContent>
-                   <CardFooter className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm">View Details</Button>
-                        <Button size="sm">Book Again</Button>
-                  </CardFooter>
-                </Card>
-              ))}
+              {pastAppointments.map(appt => <AppointmentCard key={appt.id} appt={appt} />)}
             </div>
         ) : (
             <p className="text-muted-foreground">You have no past appointments.</p>
