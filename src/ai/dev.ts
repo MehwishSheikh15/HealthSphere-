@@ -1,1 +1,8 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/skin-analysis-flow.ts';
+import '@/ai/flows/first-aid-flow.ts';
+import '@/ai/flows/medicine-check-flow.ts';
+import '@/ai/flows/doctor-verification-flow.ts';
+import '@/ai/flows/lab-report-summary-flow.ts';

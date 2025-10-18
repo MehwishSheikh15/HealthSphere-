@@ -1,3 +1,40 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-image",
+      "description": "A compassionate doctor using a tablet to consult with a patient.",
+      "imageUrl": "https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxkb2N0b3IlMjBwYXRpZW50fGVufDB8fHx8MTc2MDczMTE3OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "doctor patient"
+    },
+    {
+      "id": "doctor-1",
+      "description": "Portrait of a smiling male doctor in a white coat.",
+      "imageUrl": "https://images.unsplash.com/photo-1612531385446-f7e6d131e1d0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxkb2N0b3IlMjBwb3J0cmFpdHxlbnwwfHx8fDE3NjA3MzI4MDh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "doctor portrait"
+    },
+    {
+      "id": "doctor-2",
+      "description": "Portrait of a professional female doctor.",
+      "imageUrl": "https://images.unsplash.com/photo-1612943733919-f9661f1331f5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxkb2N0b3IlMjBwcm9mZXNzaW9uYWx8ZW58MHx8fHwxNzYwNzUyMTc2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "doctor professional"
+    },
+    {
+      "id": "doctor-3",
+      "description": "A friendly male pediatrician.",
+      "imageUrl": "https://images.unsplash.com/photo-1659353888922-7c7b1ad21650?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxkb2N0b3IlMjBmcmllbmRseXxlbnwwfHx8fDE3NjA3NTIxNzV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "doctor friendly"
+    },
+    {
+      "id": "doctor-4",
+      "description": "A female psychologist in her office.",
+      "imageUrl": "https://images.unsplash.com/photo-1692133226337-55e513450a32?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwc3ljaG9sb2dpc3QlMjBvZmZpY2V8ZW58MHx8fHwxNzYwNzc5MTk2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "psychologist office"
+    },
+    {
+      "id": "auth-background",
+      "description": "An abstract medical background with geometric shapes.",
+      "imageUrl": "https://images.unsplash.com/photo-1486291301608-a503c774721a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtZWRpY2FsJTIwYWJzdHJhY3R8ZW58MHx8fHwxNzYwNzczMTYzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "medical abstract"
+    }
+  ]
 }
