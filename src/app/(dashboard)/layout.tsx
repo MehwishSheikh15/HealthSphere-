@@ -149,9 +149,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
               <div className="flex items-center gap-4">
                  <SidebarTrigger className="md:hidden" />
-                 <h1 className="text-xl font-semibold capitalize">{role} Dashboard</h1>
+                 <Link href="/" className="md:hidden">
+                    <Logo className="w-28" />
+                 </Link>
+                 <h1 className="text-xl font-semibold capitalize hidden md:block">{role} Dashboard</h1>
               </div>
-              {/* Other header content */}
+              <div className="flex items-center gap-4">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                        <Avatar className="h-8 w-8">
+                            <AvatarImage src={`https://picsum.photos/seed/${userDisplay.email}/40/40`} alt={userDisplay.name} />
+                            <AvatarFallback>{userDisplay.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                    </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuItem onClick={handleLogout}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Log out</span>
+                    </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </header>
           <main className="p-4 md:p-6">
