@@ -163,7 +163,7 @@ export default function AiToolsPage() {
                     <p><strong>Confidence:</strong> {Math.round(skinResult.confidence * 100)}%</p>
                     <p><strong>Advice:</strong> {skinResult.advice}</p>
                     <p className="text-xs text-red-500 mt-2">Disclaimer: This is an AI-generated analysis and not a substitute for professional medical advice. Please consult a qualified dermatologist.</p>
-                     <Button asChild className="mt-4"><Link href="#">Book a Dermatologist</Link></Button>
+                     <Button asChild className="mt-4"><Link href="/patient-dashboard/find-a-doctor?specialization=Dermatologist">Book a Dermatologist</Link></Button>
                   </AlertDescription>
                 </Alert>
               )}
@@ -251,7 +251,7 @@ export default function AiToolsPage() {
                   <AlertDescription className="space-y-2 whitespace-pre-wrap">
                     <p>{labReportResult.summary}</p>
                     <p className="text-xs text-red-500 mt-2">This is a simplified summary and not a diagnosis. Discuss the full report with your doctor.</p>
-                    <Button asChild className="mt-4"><Link href="#">Consult a Doctor</Link></Button>
+                    <Button asChild className="mt-4"><Link href="/patient-dashboard/find-a-doctor">Consult a Doctor</Link></Button>
                   </AlertDescription>
                 </Alert>
               )}

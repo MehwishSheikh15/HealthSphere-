@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DoctorCard } from '@/components/shared/doctor-card';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -59,12 +59,18 @@ const specializations = ["Cardiologist", "Dermatologist", "Pediatrician", "Psych
 const locations = ["Karachi", "Lahore", "Islamabad", "All"];
 const consultationTypes = ["online", "onsite", "both"];
 
+function FindDoctorContent() {
+  const searchParams = useSearchParams();
+  const initialSpecialization = searchParams.get('specialization') || 'all';
 
-export default function FindDoctorPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [specialization, setSpecialization] = useState('all');
+  const [specialization, setSpecialization] = useState(initialSpecialization);
   const [location, setLocation] = useState('all');
   const [consultationType, setConsultationType] = useState('all');
+
+  useEffect(() => {
+    setSpecialization(initialSpecialization);
+  }, [initialSpecialization]);
 
   const filteredDoctors = doctors.filter(doctor => {
     const matchesQuery = doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) || doctor.specialization.toLowerCase().includes(searchQuery.toLowerCase());
@@ -139,5 +145,14 @@ export default function FindDoctorPage() {
         </div>
       )}
     </div>
+  );
+}
+
+
+export default function FindDoctorPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <FindDoctorContent />
+    </Suspense>
   );
 }
