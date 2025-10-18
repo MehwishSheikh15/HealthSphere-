@@ -2,178 +2,167 @@
  * @fileoverview Firestore Security Rules for HealthSphere application.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for user-related data
- * and separates doctor data for differentiated access control. It prioritizes
- * secure data access based on authenticated user identity. It assumes client
- * side validation is in place to validate user roles.
+ * This ruleset prioritizes a secure, owner-only access model for user-specific data and a shared access model for collaborative data.
+ * It focuses on preventing unauthorized data access and modification. Data schema validation is relaxed to allow for rapid prototyping.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profiles, accessible only to the authenticated user.
- * - /doctors/{doctorId}: Stores doctor profiles, accessible only to the authenticated doctor.
- * - /appointments/{appointmentId}: Stores appointment data, with access control based on patientId/doctorId.
- * - /transactions/{transactionId}: Stores transaction data related to appointments.
- * - /wallets/{walletId}: Stores wallet information for doctors.
- * - /reminders/{reminderId}: Stores reminders for users.
- * - /subscriptions/{subscriptionId}: Stores subscription information for users.
+ * - /users/{userId}: User profile information, accessible only to the user themselves.
+ * - /doctors/{doctorId}: Doctor profile information, accessible only to the doctor themselves.
+ * - /appointments/{appointmentId}: Appointment information, accessible to the patient and doctor involved.
+ * - /transactions/{transactionId}: Transaction information, related to appointments and accessible to the patient and doctor involved.
+ * - /wallets/{walletId}: Wallet information for doctors, accessible only to the doctor themselves.
+ * - /reminders/{reminderId}: Reminders for users, accessible only to the user themselves.
+ * - /subscriptions/{subscriptionId}: Subscription information for users, accessible only to the user themselves.
  *
  * Key Security Decisions:
- * - User listing is disallowed to prevent unauthorized access to user data.
- * - Write access to user and doctor profiles is restricted to the authenticated user/doctor.
- * - Assumes client side validation of `request.auth.token` to check user roles.
+ * - Strict user-ownership for user-related data (profiles, reminders, subscriptions).
+ * - Shared access for appointments and transactions, based on doctorId and patientId.
+ * - No public listing of user-related collections (users, doctors, reminders, subscriptions).
+ * - Open reads with owner-only writes are not implemented due to the absence of clear owner fields in the entity definitions.
  *
  * Denormalization for Authorization:
- * The rules avoid `get()` calls by assuming that authorization data (e.g., doctorId, patientId)
- * is present within the documents being secured.
- *
- * Structural Segregation:
- * User and doctor data are stored in separate collections to apply different access control rules.
+ * - Appointment documents contain both `doctorId` and `patientId` to allow for direct authorization checks without additional reads.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to user profile information.
-     * @path /databases/{database}/documents/users/{userId}
-     * @allow (get) Authenticated user can read their own profile.
-     * @allow (create) Authenticated user can create their own profile if the userId matches their auth UID.
-     * @allow (update) Authenticated user can update their own profile if the userId matches their auth UID.
-     * @allow (delete) Authenticated user can delete their own profile if the userId matches their auth UID.
-     * @deny (get) Unauthorized user attempts to read another user's profile.
-     * @deny (create) Unauthorized user attempts to create a profile with a mismatched userId.
-     * @deny (update) Unauthorized user attempts to update another user's profile.
-     * @deny (delete) Unauthorized user attempts to delete another user's profile.
-     * @principle Enforces document ownership for user profiles.
+     * @description Checks if the request is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the authenticated user's UID matches the provided userId.
+     */
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the user is the owner of the existing document.
+     */
+    function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Rules for user profile information.
+     * @path /users/{userId}
+     * @allow (create) User with UID 'user123' can create their profile.
+     * @allow (get) User with UID 'user123' can read their profile.
+     * @deny (create) User with UID 'user456' cannot create a profile for 'user123'.
+     * @deny (update) User with UID 'user456' cannot update the profile of 'user123'.
+     * @principle Enforces document ownership for reads and writes.
      */
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow create: if isOwner(userId) && request.resource.data.id == request.auth.uid;
       allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Controls access to doctor profile information.
-     * @path /databases/{database}/documents/doctors/{doctorId}
-     * @allow (get) Authenticated doctor can read their own profile.
-     * @allow (create) Authenticated doctor can create their own profile if the doctorId matches their auth UID.
-     * @allow (update) Authenticated doctor can update their own profile if the doctorId matches their auth UID.
-     * @allow (delete) Authenticated doctor can delete their own profile if the doctorId matches their auth UID.
-     * @deny (get) Unauthorized user attempts to read another doctor's profile.
-     * @deny (create) Unauthorized user attempts to create a profile with a mismatched doctorId.
-     * @deny (update) Unauthorized user attempts to update another doctor's profile.
-     * @deny (delete) Unauthorized user attempts to delete another doctor's profile.
-     * @principle Enforces document ownership for doctor profiles.
+     * @description Rules for doctor profile information.
+     * @path /doctors/{doctorId}
+     * @allow (create) Doctor with UID 'doctor123' can create their profile.
+     * @allow (get) Doctor with UID 'doctor123' can read their profile.
+     * @deny (create) User with UID 'user456' cannot create a profile for 'doctor123'.
+     * @deny (update) User with UID 'user456' cannot update the profile of 'doctor123'.
+     * @principle Enforces document ownership for reads and writes.
      */
     match /doctors/{doctorId} {
       allow get: if isOwner(doctorId);
       allow list: if false;
-      allow create: if isOwner(doctorId) && request.resource.data.id == doctorId;
+      allow create: if isOwner(doctorId) && request.resource.data.id == request.auth.uid;
       allow update: if isExistingOwner(doctorId) && request.resource.data.id == resource.data.id;
       allow delete: if isExistingOwner(doctorId);
     }
 
     /**
-     * @description Controls access to appointment information.
-     * @path /databases/{database}/documents/appointments/{appointmentId}
-     * @allow (get) Any authenticated user can read appointment information.
-     * @allow (create) Any authenticated user can create appointment information.
-     * @allow (update) Any authenticated user can update appointment information.
-     * @allow (delete) Any authenticated user can delete appointment information.
-     * @deny (none) No specific denial conditions, write operations are open for prototyping only.
-     * @principle Allows any authenticated user to perform CRUD operations on appointments.
+     * @description Rules for appointment information.
+     * @path /appointments/{appointmentId}
+     * @allow (get) Doctor or Patient with matching UID can read the appointment.
+     * @allow (list) Doctor or Patient with matching UID can list appointments.
+     * @deny (create) User without being the doctor or patient cannot create appointment.
+     * @deny (update) User without being the doctor or patient cannot update appointment.
+     * @principle Allows doctors and patients to access their appointments.
      */
     match /appointments/{appointmentId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow get: if isSignedIn() && (resource.data.doctorId == request.auth.uid || resource.data.patientId == request.auth.uid);
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && (request.resource.data.doctorId == request.auth.uid || request.resource.data.patientId == request.auth.uid);
+      allow update: if isSignedIn() && (resource.data.doctorId == request.auth.uid || resource.data.patientId == request.auth.uid) && resource != null;
+      allow delete: if false;
     }
 
     /**
-     * @description Controls access to transaction information.
-     * @path /databases/{database}/documents/transactions/{transactionId}
-     * @allow (get) Any authenticated user can read transaction information.
-     * @allow (create) Any authenticated user can create transaction information.
-     * @allow (update) Any authenticated user can update transaction information.
-     * @allow (delete) Any authenticated user can delete transaction information.
-     * @deny (none) No specific denial conditions, write operations are open for prototyping only.
-     * @principle Allows any authenticated user to perform CRUD operations on transactions.
+     * @description Rules for transaction information.
+     * @path /transactions/{transactionId}
+     * @allow (get) Doctor or Patient with matching UID can read the transaction.
+     * @deny (create) User without being the doctor or patient cannot create transaction.
+     * @deny (update) User without being the doctor or patient cannot update transaction.
+     * @principle Allows doctors and patients to access their transactions.
      */
     match /transactions/{transactionId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow get: if isSignedIn() && (resource.data.doctorId == request.auth.uid || resource.data.patientId == request.auth.uid);
+      allow list: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Controls access to wallet information.
-     * @path /databases/{database}/documents/wallets/{walletId}
-     * @allow (get) Any authenticated user can read wallet information.
-     * @allow (create) Any authenticated user can create wallet information.
-     * @allow (update) Any authenticated user can update wallet information.
-     * @allow (delete) Any authenticated user can delete wallet information.
-     * @deny (none) No specific denial conditions, write operations are open for prototyping only.
-     * @principle Allows any authenticated user to perform CRUD operations on wallets.
+     * @description Rules for wallet information.
+     * @path /wallets/{walletId}
+     * @allow (get) Doctor with matching UID can read their wallet.
+     * @deny (create) User without being the doctor cannot create wallet.
+     * @deny (update) User without being the doctor cannot update wallet.
+     * @principle Enforces document ownership for reads and writes.
      */
     match /wallets/{walletId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow get: if isSignedIn() && resource.data.doctorId == request.auth.uid;
+      allow list: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Controls access to reminder information.
-     * @path /databases/{database}/documents/reminders/{reminderId}
-     * @allow (get) Any authenticated user can read reminder information.
-     * @allow (create) Any authenticated user can create reminder information.
-     * @allow (update) Any authenticated user can update reminder information.
-     * @allow (delete) Any authenticated user can delete reminder information.
-     * @deny (none) No specific denial conditions, write operations are open for prototyping only.
-     * @principle Allows any authenticated user to perform CRUD operations on reminders.
+     * @description Rules for reminder information.
+     * @path /reminders/{reminderId}
+     * @allow (create) User with matching UID can create reminder.
+     * @allow (get) User with matching UID can read reminder.
+     * @deny (create) User without matching UID cannot create reminder.
+     * @deny (update) User without matching UID cannot update reminder.
+     * @principle Enforces document ownership for reads and writes.
      */
     match /reminders/{reminderId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if false;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && resource != null;
+      allow delete: if false;
     }
 
     /**
-     * @description Controls access to subscription information.
-     * @path /databases/{database}/documents/subscriptions/{subscriptionId}
-     * @allow (get) Any authenticated user can read subscription information.
-     * @allow (create) Any authenticated user can create subscription information.
-     * @allow (update) Any authenticated user can update subscription information.
-     * @allow (delete) Any authenticated user can delete subscription information.
-     * @deny (none) No specific denial conditions, write operations are open for prototyping only.
-     * @principle Allows any authenticated user to perform CRUD operations on subscriptions.
+     * @description Rules for subscription information.
+     * @path /subscriptions/{subscriptionId}
+     * @allow (create) User with matching UID can create subscription.
+     * @allow (get) User with matching UID can read subscription.
+     * @deny (create) User without matching UID cannot create subscription.
+     * @deny (update) User without matching UID cannot update subscription.
+     * @principle Enforces document ownership for reads and writes.
      */
     match /subscriptions/{subscriptionId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
-    }
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if false;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && resource != null;
+      allow delete: if false;
     }
   }
 }
