@@ -78,7 +78,7 @@ export default function PatientDashboardPage() {
       <header className='space-y-4'>
         <div>
           <h1 className="font-headline text-3xl font-bold">
-            Welcome, {user?.displayName || 'Patient'}!
+            Welcome, {user?.displayName || 'User'}!
           </h1>
           <p className="text-muted-foreground">
             Here&apos;s a quick overview of your HealthSphere account.
