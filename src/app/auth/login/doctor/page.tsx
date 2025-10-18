@@ -36,26 +36,30 @@ export default function DoctorLoginPage() {
       });
       router.push('/doctor-dashboard');
     } catch (error: any) {
-        // If login fails because the user doesn't exist, create the account
-        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+        // If login fails because the user doesn't exist (for our special test user), create the account
+        if (email === "jalal@gmail.com" && (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found')) {
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
 
-                // Update profile and create Firestore documents
+                // Update Auth profile
                 await updateProfile(user, { displayName: `Dr. Jalal Ahmed` });
 
+                // Create the doctor document in 'doctors' collection
                 const doctorDocRef = doc(firestore, "doctors", user.uid);
                 await setDoc(doctorDocRef, {
                     id: user.uid,
                     name: `Dr. Jalal Ahmed`,
                     email: email,
                     role: "doctor",
-                    isVerified: true, // Assuming this special user is pre-verified
+                    isVerified: true, // This special user is pre-verified
                     verificationStatus: 'Verified',
                     createdAt: new Date().toISOString(),
+                    specialization: 'Cardiology',
+                    experience: 10,
                 });
                 
+                // Create the user document in 'users' collection for role-based access
                 const userDocRef = doc(firestore, "users", user.uid);
                 await setDoc(userDocRef, {
                     id: user.uid,
@@ -66,7 +70,7 @@ export default function DoctorLoginPage() {
                 });
                 
                 toast({
-                    title: "Account Created & Logged In",
+                    title: "Test Account Created & Logged In",
                     description: "Redirecting you to your dashboard...",
                 });
                 router.push('/doctor-dashboard');
@@ -74,12 +78,12 @@ export default function DoctorLoginPage() {
             } catch (creationError: any) {
                  toast({
                     variant: "destructive",
-                    title: "Login Failed",
-                    description: "Could not log in or create an account. Please try again."
+                    title: "Setup Failed",
+                    description: "Could not create the test doctor account. Please try again."
                 });
             }
         } else {
-            // Handle other login errors
+            // Handle other login errors for regular users
             toast({
                 variant: "destructive",
                 title: "Login Failed",
@@ -133,6 +137,12 @@ export default function DoctorLoginPage() {
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? 'Logging in...' : 'Login'}
         </Button>
+         <div className="mt-4 text-center text-sm">
+            Don't have an account?{" "}
+            <Link href="/auth/signup/doctor" className="underline">
+            Sign up
+            </Link>
+        </div>
       </form>
     </>
   );

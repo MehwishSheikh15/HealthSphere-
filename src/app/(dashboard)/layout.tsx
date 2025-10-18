@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { useSidebar, SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarRail } from '@/components/ui/sidebar';
 import { Logo } from '@/components/layout/logo';
 import { navItems } from '@/lib/config';
-import { type Role, type NavItem, type User as UserEntity } from '@/lib/types';
+import { type Role, type User as UserEntity } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, ChevronDown } from 'lucide-react';
@@ -35,10 +35,13 @@ const useUserRole = (): { role: Role, isLoading: boolean } => {
     return { role: 'patient', isLoading: true };
   }
   
-  if (userProfile?.role === 'doctor') return { role: 'doctor', isLoading: false };
-  if (userProfile?.role === 'admin') return { role: 'admin', isLoading: false };
+  // The primary source of truth for role is the user's profile in Firestore.
+  if (userProfile?.role) {
+    return { role: userProfile.role, isLoading: false };
+  }
   
-  // A simple fallback based on email for demonstration
+  // A simple fallback based on email for demonstration.
+  // This should only be hit if the Firestore document hasn't been created yet.
   if (user?.email === 'jalal@gmail.com') return { role: 'doctor', isLoading: false };
   if (user?.email?.includes('admin')) return { role: 'admin', isLoading: false };
 
