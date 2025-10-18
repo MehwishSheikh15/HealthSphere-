@@ -8,12 +8,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BrainCircuit, Pill, Scan, Heart, FileScan, Bot } from "lucide-react";
+import { BrainCircuit, Pill, Scan, Heart, FileScan, Bot, Send } from "lucide-react";
 import { analyzeSkinCondition, type AnalyzeSkinConditionOutput } from '@/ai/flows/skin-analysis-flow';
 import { checkMedicine, type CheckMedicineOutput } from '@/ai/flows/medicine-check-flow';
 import { getFirstAidInstructions, type FirstAidOutput } from '@/ai/flows/first-aid-flow';
 import { summarizeLabReport, type SummarizeLabReportOutput } from '@/ai/flows/lab-report-summary-flow';
+import { getPsychologistResponse, type ChatMessage } from '@/ai/flows/psychologist-chat-flow';
 import { useToast } from "@/hooks/use-toast";
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function AiToolsPage() {
   const { toast } = useToast();
@@ -37,6 +39,10 @@ export default function AiToolsPage() {
   // State for Lab Report Summary
   const [labReport, setLabReport] = useState<File | null>(null);
   const [labReportResult, setLabReportResult] = useState<SummarizeLabReportOutput | null>(null);
+
+  // State for AI Psychologist
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState("");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<File | null>>) => {
     if (e.target.files && e.target.files[0]) {
@@ -128,6 +134,27 @@ export default function AiToolsPage() {
     setLoading(prev => ({ ...prev, lab: false }));
   }
 
+  const handlePsychologistChat = async () => {
+    if (!chatInput.trim()) return;
+    
+    const newUserMessage: ChatMessage = { role: 'user', content: chatInput };
+    const newHistory = [...chatHistory, newUserMessage];
+    setChatHistory(newHistory);
+    setChatInput("");
+    setLoading(prev => ({ ...prev, chat: true }));
+
+    try {
+      const result = await getPsychologistResponse({ chatHistory: newHistory });
+      const newModelMessage: ChatMessage = { role: 'model', content: result.response };
+      setChatHistory([...newHistory, newModelMessage]);
+    } catch (error) {
+      console.error("AI Psychologist chat failed:", error);
+      toast({ variant: 'destructive', title: "Chat Failed", description: "The AI is unable to respond right now. Please try again later." });
+      const errorMessage: ChatMessage = { role: 'model', content: "I'm sorry, I am unable to respond at the moment." };
+      setChatHistory([...newHistory, errorMessage]);
+    }
+    setLoading(prev => ({ ...prev, chat: false }));
+  };
 
   return (
     <div>
@@ -297,14 +324,37 @@ export default function AiToolsPage() {
               <CardTitle>AI Psychologist Chat</CardTitle>
               <CardDescription>Access mental health support through our ethical AI, guided by Islamic principles. This is not a replacement for professional therapy.</CardDescription>
             </CardHeader>
-            <CardContent>
-                <Alert variant="destructive">
-                  <BrainCircuit className="h-4 w-4" />
-                  <AlertTitle>Coming Soon!</AlertTitle>
-                  <AlertDescription>
-                    Our ethical AI Psychologist, incorporating guidance from the Qur'an and Sunnah, is under development to ensure it is both helpful and responsible.
-                  </AlertDescription>
-                </Alert>
+            <CardContent className="flex flex-col h-[60vh]">
+              <ScrollArea className="flex-1 p-4 border rounded-md bg-muted/20">
+                <div className="space-y-4">
+                  {chatHistory.map((msg, index) => (
+                    <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-md p-3 rounded-lg ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-background'}`}>
+                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {loading.chat && (
+                     <div className="flex justify-start">
+                        <div className="max-w-md p-3 rounded-lg bg-background">
+                            <p>Thinking...</p>
+                        </div>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+              <div className="mt-4 flex gap-2">
+                <Input 
+                    value={chatInput} 
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="How are you feeling today?"
+                    onKeyDown={(e) => e.key === 'Enter' && !loading.chat && handlePsychologistChat()}
+                    disabled={loading.chat}
+                />
+                <Button onClick={handlePsychologistChat} disabled={loading.chat}>
+                    <Send className="h-4 w-4" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
