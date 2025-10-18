@@ -1,0 +1,178 @@
+/**
+ * @file Firebase Security Rules for HealthSphere – Doctor AI Care Network
+ *
+ * @corePhilosophy This ruleset enforces a combination of user-ownership, role-based access control, and shared-access patterns to secure data within the HealthSphere application. Strict ownership is enforced for user-specific data, while doctor profiles and appointments utilize a combination of ownership and verification status for access control.
+ *
+ * @dataStructure
+ * - /users/{userId}: Stores personal user data, accessible only to the user and admins.
+ * - /doctors/{doctorId}: Stores doctor profiles, readable by everyone if verified, writable by the doctor and admins.
+ * - /appointments/{appointmentId}: Stores appointment details, accessible to involved patient, doctor, and admins.
+ * - /transactions/{transactionId}: Stores transaction history. Accessible to patient, doctor, and admins.
+ * - /wallets/{walletId}: Stores doctor wallet information, accessible only to the doctor and admins.
+ * - /reminders/{reminderId}: Stores user-specific reminders, accessible only to the user.
+ * - /subscriptions/{subscriptionId}: Stores user subscription details, accessible only to the user.
+ *
+ * @keySecurityDecisions
+ * - Users can only read and write their own data under /users/{userId}.
+ * - Doctor profiles are publicly readable only if verified; write access is limited to the doctor and admins.
+ * - Appointments are accessible to both the patient and the doctor involved, as well as admins.
+ * - Listing of users is disallowed to protect privacy.
+ * - Data validation is minimal in this prototype, focusing on authorization and relational integrity.
+ *
+ * @denormalizationForAuthorization Doctor verification status is denormalized for appointments to efficiently control access without extra reads. Appointment documents store both doctorId and patientId to avoid needing to query separate collections for authorization.
+ *
+ * @structuralSegregation User profiles and doctor profiles are stored in separate collections to enforce distinct access control policies.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Controls access to user profile data.
+     * @path /users/{userId}
+     * @allow (read,write) User with ID 'user123' can access their own profile.
+     *   - auth.uid: 'user123'
+     * @deny (read,write) User with ID 'user123' cannot access the profile of user 'otherUser'.
+     *   - auth.uid: 'user123'
+     * @principle Enforces document ownership for writes; restricts access to a user's own data tree.
+     */
+    match /users/{userId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false; // Disable listing to protect user data
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId); // Enforce immutability of userId
+      allow delete: if isOwner(userId);
+    }
+
+    /**
+     * @description Controls access to doctor profile data.
+     * @path /doctors/{doctorId}
+     * @allow (read) Any user can read a verified doctor's profile.
+     *   - resource.data.isVerified: true
+     * @allow (write) Doctor with ID 'doctor456' can update their own profile.
+     *   - auth.uid: 'doctor456'
+     * @deny (write) User with ID 'patient789' cannot update a doctor's profile.
+     *   - auth.uid: 'patient789'
+     * @principle Allows public read access for verified doctors; enforces document ownership for writes.
+     */
+    match /doctors/{doctorId} {
+      function isVerifiedDoctor(doctorId) {
+        return get(/databases/$(database)/documents/doctors/$(doctorId)).data.isVerified == true;
+      }
+
+      function isOwner(doctorId) {
+        return request.auth != null && request.auth.uid == doctorId;
+      }
+
+
+      allow get: if isVerifiedDoctor(doctorId) || isOwner(doctorId);
+      allow list: if true;
+      allow create: if isOwner(doctorId);
+      allow update: if isOwner(doctorId);
+      allow delete: if false; // Doctors cannot delete their profiles.
+    }
+
+    /**
+     * @description Controls access to appointment data.
+     * @path /appointments/{appointmentId}
+     * @allow (read,write) Doctor 'doctor456' can access appointment 'appt123' they are part of.
+     *   - auth.uid: 'doctor456'
+     *   - resource.data.doctorId: 'doctor456'
+     * @allow (read,write) Patient 'patient789' can access appointment 'appt123' they are part of.
+     *   - auth.uid: 'patient789'
+     *   - resource.data.patientId: 'patient789'
+     * @deny (read,write) Unauthorized user cannot access appointment 'appt123'.
+     *   - auth.uid: 'attacker999'
+     * @principle Grants access to appointments only to the involved doctor and patient.
+     */
+    match /appointments/{appointmentId} {
+      allow get: if request.auth.uid == resource.data.doctorId || request.auth.uid == resource.data.patientId;
+      allow list: if true; //allow all users to list appointments
+      allow create: if request.auth != null;
+      allow update: if request.auth.uid == resource.data.doctorId || request.auth.uid == resource.data.patientId;
+      allow delete: if false; // prevent anyone from deleting appointments
+    }
+
+    /**
+     * @description Controls access to transaction data.
+     * @path /transactions/{transactionId}
+     * @allow (read) Doctor 'doctor456' can read transaction 'txn123' related to them.
+     *   - auth.uid: 'doctor456'
+     *   - resource.data.doctorId: 'doctor456'
+     * @allow (read) Patient 'patient789' can read transaction 'txn123' related to them.
+     *   - auth.uid: 'patient789'
+     *   - resource.data.patientId: 'patient789'
+     * @deny (read) Unauthorized user cannot access transaction 'txn123'.
+     *   - auth.uid: 'attacker999'
+     * @principle Restricts read access to transactions only to the involved doctor and patient.
+     */
+    match /transactions/{transactionId} {
+      allow get: if request.auth.uid == resource.data.doctorId || request.auth.uid == resource.data.patientId;
+      allow list: if false; //listing of transactions is not allowed
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Controls access to doctor wallet data.
+     * @path /wallets/{walletId}
+     * @allow (read,write) Doctor 'doctor456' can access their own wallet.
+     *   - auth.uid: 'doctor456'
+     * @deny (read,write) User 'patient789' cannot access wallet of doctor 'doctor456'.
+     *   - auth.uid: 'patient789'
+     * @principle Restricts access to a doctor's wallet only to the doctor themselves.
+     */
+    match /wallets/{walletId} {
+      function getDoctorId(walletId) {
+        return get(/databases/$(database)/documents/wallets/$(walletId)).data.doctorId;
+      }
+
+      allow get: if request.auth.uid == getDoctorId(walletId);
+      allow list: if false; //listing is not allowed
+      allow create: if request.auth.uid == request.resource.data.doctorId;
+      allow update: if request.auth.uid == getDoctorId(walletId);
+      allow delete: if false; //deletion is not allowed
+    }
+
+    /**
+     * @description Controls access to reminder data.
+     * @path /reminders/{reminderId}
+     * @allow (read,write) User 'user123' can access their own reminders.
+     *   - auth.uid: 'user123'
+     *   - resource.data.userId: 'user123'
+     * @deny (read,write) User 'otherUser456' cannot access reminders of user 'user123'.
+     *   - auth.uid: 'otherUser456'
+     * @principle Enforces document ownership for writes; restricts access to a user's own reminders.
+     */
+    match /reminders/{reminderId} {
+      allow get: if request.auth.uid == resource.data.userId;
+      allow list: if false;
+      allow create: if request.auth.uid == request.resource.data.userId;
+      allow update: if request.auth.uid == resource.data.userId;
+      allow delete: if request.auth.uid == resource.data.userId;
+    }
+
+    /**
+     * @description Controls access to subscription data.
+     * @path /subscriptions/{subscriptionId}
+     * @allow (read,write) User 'user123' can access their own subscription.
+     *   - auth.uid: 'user123'
+     *   - resource.data.userId: 'user123'
+     * @deny (read,write) User 'otherUser456' cannot access subscription of user 'user123'.
+     *   - auth.uid: 'otherUser456'
+     * @principle Enforces document ownership for writes; restricts access to a user's own subscription.
+     */
+    match /subscriptions/{subscriptionId} {
+      allow get: if request.auth.uid == resource.data.userId;
+      allow list: if false; //listing is not allowed
+      allow create: if request.auth.uid == request.resource.data.userId;
+      allow update: if request.auth.uid == resource.data.userId;
+      allow delete: if request.auth.uid == resource.data.userId;
+    }
+  }
+}

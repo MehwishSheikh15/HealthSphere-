@@ -1,0 +1,514 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user in the HealthSphere application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The user's full name."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "role": {
+          "type": "string",
+          "description": "The user's role (e.g., doctor, patient, admin)."
+        },
+        "phone": {
+          "type": "string",
+          "description": "The user's phone number."
+        },
+        "gender": {
+          "type": "string",
+          "description": "The user's gender."
+        },
+        "dob": {
+          "type": "string",
+          "description": "The user's date of birth.",
+          "format": "date-time"
+        },
+        "bloodGroup": {
+          "type": "string",
+          "description": "The user's blood group."
+        },
+        "profilePhoto": {
+          "type": "string",
+          "description": "URL of the user's profile photo.",
+          "format": "uri"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp of when the user was created.",
+          "format": "date-time"
+        },
+        "notificationSettings": {
+          "type": "string",
+          "description": "Notification settings for email and push notifications."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email",
+        "role",
+        "phone",
+        "gender",
+        "dob",
+        "bloodGroup",
+        "profilePhoto",
+        "createdAt",
+        "notificationSettings"
+      ]
+    },
+    "Doctor": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Doctor",
+      "type": "object",
+      "description": "Represents a doctor in the HealthSphere application, extending user information.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the doctor entity."
+        },
+        "specialization": {
+          "type": "string",
+          "description": "The doctor's area of specialization (e.g., Cardiology)."
+        },
+        "degreeLicenseNumber": {
+          "type": "string",
+          "description": "The doctor's degree license number."
+        },
+        "experience": {
+          "type": "number",
+          "description": "The doctor's years of experience."
+        },
+        "isVerified": {
+          "type": "boolean",
+          "description": "Indicates whether the doctor's profile is verified."
+        },
+        "verificationStatus": {
+          "type": "string",
+          "description": "The verification status of the doctor's profile."
+        },
+        "availability": {
+          "type": "array",
+          "description": "The doctor's availability schedule.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "feePKR": {
+          "type": "number",
+          "description": "The doctor's consultation fee in PKR."
+        },
+        "location": {
+          "type": "string",
+          "description": "The doctor's location."
+        },
+        "rating": {
+          "type": "number",
+          "description": "The doctor's rating."
+        },
+        "totalEarnings": {
+          "type": "number",
+          "description": "The doctor's total earnings."
+        },
+        "walletBalance": {
+          "type": "number",
+          "description": "The doctor's wallet balance."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp of when the doctor profile was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "specialization",
+        "degreeLicenseNumber",
+        "experience",
+        "isVerified",
+        "verificationStatus",
+        "availability",
+        "feePKR",
+        "location",
+        "rating",
+        "totalEarnings",
+        "walletBalance",
+        "createdAt"
+      ]
+    },
+    "Appointment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Appointment",
+      "type": "object",
+      "description": "Represents an appointment between a patient and a doctor.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the appointment entity."
+        },
+        "doctorId": {
+          "type": "string",
+          "description": "Reference to Doctor. (Relationship: Doctor 1:N Appointment)"
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Reference to User (Patient). (Relationship: User 1:N Appointment)"
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the appointment (e.g., Pending, Confirmed, Completed, Cancelled)."
+        },
+        "feePaid": {
+          "type": "boolean",
+          "description": "Indicates whether the fee has been paid for the appointment."
+        },
+        "paymentIntentId": {
+          "type": "string",
+          "description": "The Stripe PaymentIntent ID for the appointment."
+        },
+        "videoLink": {
+          "type": "string",
+          "description": "The URL for the video consultation."
+        },
+        "scheduledAt": {
+          "type": "string",
+          "description": "Timestamp of when the appointment is scheduled.",
+          "format": "date-time"
+        },
+        "symptoms": {
+          "type": "string",
+          "description": "The patient's symptoms for the appointment."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp of when the appointment was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "doctorId",
+        "patientId",
+        "status",
+        "feePaid",
+        "paymentIntentId",
+        "videoLink",
+        "scheduledAt",
+        "symptoms",
+        "createdAt"
+      ]
+    },
+    "Transaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Transaction",
+      "type": "object",
+      "description": "Represents a financial transaction related to an appointment.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the transaction entity."
+        },
+        "appointmentId": {
+          "type": "string",
+          "description": "Reference to Appointment. (Relationship: Appointment 1:N Transaction)"
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Reference to User (Patient). (Relationship: User 1:N Transaction)"
+        },
+        "doctorId": {
+          "type": "string",
+          "description": "Reference to Doctor. (Relationship: Doctor 1:N Transaction)"
+        },
+        "amountPKR": {
+          "type": "number",
+          "description": "The amount of the transaction in PKR."
+        },
+        "commission": {
+          "type": "number",
+          "description": "The commission amount for the transaction."
+        },
+        "doctorEarning": {
+          "type": "number",
+          "description": "The amount the doctor earned from the transaction."
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the transaction (e.g., paid, pending)."
+        },
+        "stripeSessionId": {
+          "type": "string",
+          "description": "The Stripe session ID for the transaction."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp of when the transaction was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "appointmentId",
+        "patientId",
+        "doctorId",
+        "amountPKR",
+        "commission",
+        "doctorEarning",
+        "status",
+        "stripeSessionId",
+        "createdAt"
+      ]
+    },
+    "Wallet": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Wallet",
+      "type": "object",
+      "description": "Represents a doctor's wallet and transaction history.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the wallet entity."
+        },
+        "doctorId": {
+          "type": "string",
+          "description": "Reference to Doctor. (Relationship: Doctor 1:1 Wallet)"
+        },
+        "balancePKR": {
+          "type": "number",
+          "description": "The wallet balance in PKR."
+        },
+        "transactionIds": {
+          "type": "array",
+          "description": "References to Transactions. (Relationship: Wallet 1:N Transaction)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "doctorId",
+        "balancePKR",
+        "transactionIds"
+      ]
+    },
+    "Reminder": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Reminder",
+      "type": "object",
+      "description": "Represents a reminder for medication or appointments.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the reminder entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Reminder)"
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of reminder (e.g., medication, appointment)."
+        },
+        "message": {
+          "type": "string",
+          "description": "The reminder message."
+        },
+        "triggerAt": {
+          "type": "string",
+          "description": "Timestamp of when the reminder should be triggered.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "type",
+        "message",
+        "triggerAt"
+      ]
+    },
+    "Subscription": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Subscription",
+      "type": "object",
+      "description": "Represents a user's subscription status.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the subscription entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:1 Subscription)"
+        },
+        "plan": {
+          "type": "string",
+          "description": "The subscription plan (e.g., free, pro)."
+        },
+        "status": {
+          "type": "string",
+          "description": "The subscription status (e.g., active, inactive)."
+        },
+        "stripeSessionId": {
+          "type": "string",
+          "description": "The Stripe session ID for the subscription."
+        },
+        "startedAt": {
+          "type": "string",
+          "description": "Timestamp of when the subscription started.",
+          "format": "date-time"
+        },
+        "endsAt": {
+          "type": "string",
+          "description": "Timestamp of when the subscription ends.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "plan",
+        "status",
+        "stripeSessionId",
+        "startedAt",
+        "endsAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information. The userId is the Firebase Auth UID.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase Auth UID of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "doctors/{doctorId}",
+        "definition": {
+          "entityName": "Doctor",
+          "schema": {
+            "$ref": "#/backend/entities/Doctor"
+          },
+          "description": "Stores doctor profile information. The doctorId is the Firebase Auth UID.",
+          "params": [
+            {
+              "name": "doctorId",
+              "description": "The Firebase Auth UID of the doctor."
+            }
+          ]
+        }
+      },
+      {
+        "path": "appointments/{appointmentId}",
+        "definition": {
+          "entityName": "Appointment",
+          "schema": {
+            "$ref": "#/backend/entities/Appointment"
+          },
+          "description": "Stores appointment information. Includes doctorId and patientId for identifying participants.",
+          "params": [
+            {
+              "name": "appointmentId",
+              "description": "The unique ID of the appointment."
+            }
+          ]
+        }
+      },
+      {
+        "path": "transactions/{transactionId}",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": {
+            "$ref": "#/backend/entities/Transaction"
+          },
+          "description": "Stores transaction information related to appointments. Includes references to appointmentId, patientId, and doctorId.",
+          "params": [
+            {
+              "name": "transactionId",
+              "description": "The unique ID of the transaction."
+            }
+          ]
+        }
+      },
+      {
+        "path": "wallets/{walletId}",
+        "definition": {
+          "entityName": "Wallet",
+          "schema": {
+            "$ref": "#/backend/entities/Wallet"
+          },
+          "description": "Stores wallet information for doctors, including balance and transaction history.",
+          "params": [
+            {
+              "name": "walletId",
+              "description": "The unique ID of the wallet, likely corresponding to the doctorId."
+            }
+          ]
+        }
+      },
+      {
+        "path": "reminders/{reminderId}",
+        "definition": {
+          "entityName": "Reminder",
+          "schema": {
+            "$ref": "#/backend/entities/Reminder"
+          },
+          "description": "Stores reminder information for users, including type, message, and trigger time.",
+          "params": [
+            {
+              "name": "reminderId",
+              "description": "The unique ID of the reminder."
+            }
+          ]
+        }
+      },
+      {
+        "path": "subscriptions/{subscriptionId}",
+        "definition": {
+          "entityName": "Subscription",
+          "schema": {
+            "$ref": "#/backend/entities/Subscription"
+          },
+          "description": "Stores subscription information for users, including plan, status, and Stripe session ID.",
+          "params": [
+            {
+              "name": "subscriptionId",
+              "description": "The unique ID of the subscription."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to ensure Authorization Independence, DBAC, and support secure list operations (QAPs). Authorization Independence is achieved through denormalization: key authorization data (like doctor verification status for appointments) is duplicated where needed to avoid costly and insecure `get()` calls in security rules. Segregation ensures that collections contain documents with a homogeneous security posture.  For example, user profiles and doctor profiles are separated into `/users` and `/doctors` respectively.\n\nQAPs are supported via structural segregation and explicit membership models.  For instance, listing appointments is secured by leveraging path-based ownership under the user's document. Furthermore, the design enforces invariants such as ownership and timestamps to ensure data integrity.\n\nThe proposed structure also facilitates role-based access control where roles are verified on the client side by checking the `request.auth.token` which is set during user creation."
+  }
+}
