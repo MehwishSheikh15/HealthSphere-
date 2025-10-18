@@ -3,7 +3,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useSidebar, SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
+import { useSidebar, SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarRail } from '@/components/ui/sidebar';
 import { Logo } from '@/components/layout/logo';
 import { navItems } from '@/lib/config';
 import { type Role, type NavItem } from '@/lib/types';
@@ -111,10 +111,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <SidebarProvider>
       <div className="relative flex min-h-screen flex-col">
         <div className="flex flex-1">
-            <Sidebar>
+            <Sidebar collapsible="icon">
+              <SidebarRail />
                 <SidebarHeader>
-                    <div className="flex items-center gap-2">
-                        <Logo className="w-32" />
+                    <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
+                        <Link href="/patient-dashboard"><Logo className="w-8 group-data-[collapsible=icon]:w-8" /></Link>
+                        <span className="text-xl font-bold group-data-[collapsible=icon]:hidden">HealthSphere</span>
                     </div>
                 </SidebarHeader>
                 <SidebarContent className="p-2">

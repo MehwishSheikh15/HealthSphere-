@@ -6,7 +6,7 @@ export function Logo({ className }: { className?: string }) {
     <Image 
       src="/logo.png"
       alt="HealthSphere Logo"
-      width={160}
+      width={40}
       height={40}
       className={cn("h-auto", className)}
       priority
