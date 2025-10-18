@@ -13,6 +13,7 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfi
 import { ArrowLeft } from "lucide-react";
 import { doc, setDoc } from "firebase/firestore";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { addDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 export default function DoctorLoginPage() {
   const [email, setEmail] = useState("jalal@gmail.com");
@@ -38,7 +39,7 @@ export default function DoctorLoginPage() {
       router.push('/doctor-dashboard');
     } catch (error: any) {
         // If login fails because the user doesn't exist (for our special test user), create the account
-        if (email === "jalal@gmail.com" && (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found')) {
+        if (email === "jalal@gmail.com" && (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password')) {
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
@@ -51,7 +52,7 @@ export default function DoctorLoginPage() {
 
                 // Create the doctor document in 'doctors' collection with a specific ID
                 const doctorDocRef = doc(firestore, "doctors", doctorId);
-                await setDoc(doctorDocRef, {
+                setDocumentNonBlocking(doctorDocRef, {
                     id: doctorId,
                     uid: user.uid, // Keep track of the auth UID
                     name: `Dr. Jalal Ahmed`,
@@ -63,17 +64,17 @@ export default function DoctorLoginPage() {
                     specialization: 'Cardiology',
                     experience: 10,
                     licenseDocumentUrl: dummyLicense?.imageUrl || '',
-                });
+                }, {});
                 
                 // Create the user document in 'users' collection for role-based access
                 const userDocRef = doc(firestore, "users", user.uid);
-                await setDoc(userDocRef, {
+                setDocumentNonBlocking(userDocRef, {
                     id: user.uid,
                     name: `Dr. Jalal Ahmed`,
                     email: email,
                     role: "doctor",
                     createdAt: new Date().toISOString(),
-                });
+                }, {});
                 
                 toast({
                     title: "Test Account Created & Logged In",
@@ -82,11 +83,30 @@ export default function DoctorLoginPage() {
                 router.push('/doctor-dashboard');
 
             } catch (creationError: any) {
-                 toast({
-                    variant: "destructive",
-                    title: "Setup Failed",
-                    description: "Could not create the test doctor account. Please try again."
-                });
+                 if (creationError.code === 'auth/email-already-in-use') {
+                    // If creation fails because email exists, it means password was wrong.
+                    // We can now just sign in again.
+                     try {
+                        await signInWithEmailAndPassword(auth, email, password);
+                        toast({
+                            title: "Login Successful",
+                            description: "Redirecting you to your dashboard...",
+                        });
+                        router.push('/doctor-dashboard');
+                     } catch (finalLoginError) {
+                          toast({
+                            variant: "destructive",
+                            title: "Login Failed",
+                            description: "Could not log into the test account. Please check credentials or network."
+                        });
+                     }
+                 } else {
+                    toast({
+                        variant: "destructive",
+                        title: "Setup Failed",
+                        description: "Could not create the test doctor account. Please try again."
+                    });
+                 }
             }
         } else {
             // Handle other login errors for regular users
