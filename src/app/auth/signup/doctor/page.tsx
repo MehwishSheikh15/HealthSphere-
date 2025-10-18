@@ -155,7 +155,7 @@ export default function DoctorSignupPage() {
             <FormItem><FormLabel>Specialization</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Select a specialization" /></SelectTrigger></FormControl>
-                    <SelectContent><SelectItem value="" disabled>Select a specialization</SelectItem>{specializations.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                    <SelectContent>{specializations.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                 </Select>
             <FormMessage /></FormItem>
           )} />
