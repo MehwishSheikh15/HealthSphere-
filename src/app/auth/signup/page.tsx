@@ -1,111 +1,62 @@
-"use client"
 
-import Link from "next/link"
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { useAuth, initiateEmailSignUp, initiateEmailSignIn } from "@/firebase";
-import { useToast } from "@/hooks/use-toast";
+'use client';
 
-export default function SignupPage() {
-  const [role, setRole] = useState("patient");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const auth = useAuth();
+import Link from 'next/link';
+import { Card, CardContent } from '@/components/ui/card';
+import { User, Stethoscope, ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+
+const roles = [
+  {
+    name: 'Patient',
+    icon: User,
+    href: '/auth/signup/patient',
+    description: 'Create an account to manage your health and book appointments.',
+  },
+  {
+    name: 'Doctor',
+    icon: Stethoscope,
+    href: '/auth/signup/doctor',
+    description: 'Join our network of verified medical professionals.',
+  },
+];
+
+export default function SignupRoleSelectionPage() {
   const router = useRouter();
-  const { toast } = useToast();
-
-  const handleSignup = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!auth) return;
-
-    if (role === 'doctor') {
-      // For demonstration, we'll create the dummy doctor account here
-      // In a real app, you'd have a proper doctor application process.
-      initiateEmailSignUp(auth, 'jalal@gmail.com', '123456');
-      toast({
-        title: "Doctor Account Created",
-        description: "The dummy doctor account has been created. You can now log in.",
-      });
-      router.push('/auth/login');
-      return;
-    }
-
-    initiateEmailSignUp(auth, email, password);
-    // Here you would typically also save the user's role and other details to Firestore.
-    // We will add that in a later step.
-    toast({
-      title: "Signup Successful!",
-      description: "Redirecting you to your dashboard...",
-    });
-    
-    router.push('/patient-dashboard');
-  };
-
 
   return (
     <>
-      <form onSubmit={handleSignup} className="grid gap-4">
-        <div className="grid gap-2">
-          <Label htmlFor="full-name">Full Name</Label>
-          <Input id="full-name" placeholder="Jalal Ahmed" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="m@example.com"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="password">Password</Label>
-          <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-        </div>
-        <div className="grid gap-2">
-            <Label>I am a...</Label>
-            <RadioGroup defaultValue="patient" className="grid grid-cols-2 gap-4" onValueChange={setRole}>
-              <div>
-                <RadioGroupItem value="patient" id="patient" className="peer sr-only" />
-                <Label
-                  htmlFor="patient"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                >
-                  Patient
-                </Label>
-              </div>
-              <div>
-                <RadioGroupItem
-                  value="doctor"
-                  id="doctor"
-                  className="peer sr-only"
-                />
-                <Label
-                  htmlFor="doctor"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                >
-                  Doctor
-                </Label>
-              </div>
-            </RadioGroup>
-        </div>
-        <Button type="submit" className="w-full">
-          Create an account
-        </Button>
-      </form>
-      <div className="mt-4 text-center text-sm">
+      <Button variant="ghost" size="sm" className="absolute top-4 left-4" onClick={() => router.back()}>
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back
+      </Button>
+      <div className="grid gap-2 text-center mb-4">
+        <h2 className="text-2xl font-bold">Create Your Account</h2>
+        <p className="text-muted-foreground">Are you a patient or a doctor?</p>
+      </div>
+      <div className="grid gap-4 w-full">
+        {roles.map((role, index) => (
+          <Link key={index} href={role.href} passHref>
+            <Card className="hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer">
+              <CardContent className="p-4 flex items-center gap-4">
+                <role.icon className="h-8 w-8 text-primary" />
+                <div>
+                  <p className="font-semibold">{role.name}</p>
+                  <p className="text-sm text-muted-foreground">{role.description}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
+
+       <div className="mt-4 text-center text-sm">
         Already have an account?{" "}
         <Link href="/auth/login" className="underline">
           Log in
         </Link>
       </div>
     </>
-  )
+  );
 }

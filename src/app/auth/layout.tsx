@@ -10,10 +10,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="relative min-h-screen w-full lg:grid lg:grid-cols-2">
        <div className="relative flex items-center justify-center py-12">
-        <div className="mx-auto grid w-[350px] gap-6">
+        <div className="mx-auto grid w-[350px] md:w-[450px] gap-6">
           <div className="grid gap-2 text-center">
             <Link href="/" className="mx-auto mb-4">
-                <Logo className="size-16" />
+                <Logo className="w-24 h-24" />
             </Link>
             <h1 className="text-3xl font-bold font-headline">Welcome to HealthSphere</h1>
             <p className="text-balance text-muted-foreground">
