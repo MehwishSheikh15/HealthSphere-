@@ -22,6 +22,22 @@ export type User = {
     }
 }
 
+export type Doctor = {
+    id: string;
+    uid: string;
+    name: string;
+    email: string;
+    phone?: string;
+    role: 'doctor';
+    isVerified: boolean;
+    verificationStatus: string;
+    createdAt: string;
+    specialization: string;
+    experience: number;
+    feePKR: number;
+    licenseDocumentUrl?: string;
+}
+
 export type Appointment = {
     id: string;
     doctorId: string;
