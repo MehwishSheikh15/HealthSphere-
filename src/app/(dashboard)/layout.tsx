@@ -115,7 +115,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <SidebarRail />
                 <SidebarHeader>
                     <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-                        <Link href="/patient-dashboard"><Logo className="w-8 group-data-[collapsible=icon]:w-8" /></Link>
+                        <Link href="/patient-dashboard"><Logo className="w-8 group-data-[collapsible=icon]:w-8" iconOnly /></Link>
                         <span className="text-xl font-bold group-data-[collapsible=icon]:hidden">HealthSphere</span>
                     </div>
                 </SidebarHeader>
@@ -154,7 +154,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <div className="flex items-center gap-4">
                      <SidebarTrigger />
                      <Link href="/patient-dashboard" className="md:hidden">
-                        <Logo className="w-28" />
+                        <Logo className="w-8" iconOnly />
                      </Link>
                      <h1 className="text-xl font-semibold capitalize hidden md:block">{role} Dashboard</h1>
                   </div>
