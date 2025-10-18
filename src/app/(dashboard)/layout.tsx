@@ -152,7 +152,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur-sm">
                 <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
                   <div className="flex items-center gap-4">
-                     <SidebarTrigger className="md:hidden" />
+                     <SidebarTrigger />
                      <Link href="/patient-dashboard" className="md:hidden">
                         <Logo className="w-28" />
                      </Link>
