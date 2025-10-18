@@ -26,6 +26,8 @@ export default function AiToolsPage() {
 
   // State for Medicine Checker
   const [medicineImage, setMedicineImage] = useState<File | null>(null);
+  const [medicineName, setMedicineName] = useState("");
+  const [medicineDosage, setMedicineDosage] = useState("");
   const [medicineResult, setMedicineResult] = useState<CheckMedicineOutput | null>(null);
 
   // State for First Aid
@@ -70,15 +72,19 @@ export default function AiToolsPage() {
   };
 
   const handleMedicineCheck = async () => {
-    if (!medicineImage) {
-      toast({ variant: 'destructive', title: "No image selected", description: "Please upload a photo of the medicine." });
+    if (!medicineImage && !medicineName) {
+      toast({ variant: 'destructive', title: "No input provided", description: "Please upload a photo or enter the medicine name." });
       return;
     }
     setLoading(prev => ({ ...prev, medicine: true }));
     setMedicineResult(null);
     try {
-      const photoDataUri = await fileToDataUri(medicineImage);
-      const result = await checkMedicine({ photoDataUri });
+      const photoDataUri = medicineImage ? await fileToDataUri(medicineImage) : undefined;
+      const result = await checkMedicine({ 
+        photoDataUri, 
+        name: medicineName, 
+        dosage: medicineDosage 
+      });
       setMedicineResult(result);
     } catch (error) {
       console.error("Medicine check failed:", error);
@@ -175,25 +181,51 @@ export default function AiToolsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Medicine Checker</CardTitle>
-              <CardDescription>Upload a photo of a pill to identify it. This tool helps verify medication but always consult a pharmacist or doctor.</CardDescription>
+              <CardDescription>Upload a photo of a pill or enter its name to identify it and check its authenticity. This tool helps verify medication but always consult a pharmacist or doctor.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                <div className="grid w-full max-w-sm items-center gap-1.5">
-                <Label htmlFor="medicine-picture">Pill Picture</Label>
+                <Label htmlFor="medicine-picture">Pill Picture (Optional)</Label>
                 <Input id="medicine-picture" type="file" accept="image/*" onChange={(e) => handleFileChange(e, setMedicineImage)} />
               </div>
+              <p className="text-center text-sm text-muted-foreground">OR</p>
+               <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="medicine-name">Medicine Name</Label>
+                    <Input id="medicine-name" value={medicineName} onChange={(e) => setMedicineName(e.target.value)} placeholder="e.g., Panadol" />
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="medicine-dosage">Dosage (mg)</Label>
+                    <Input id="medicine-dosage" value={medicineDosage} onChange={(e) => setMedicineDosage(e.target.value)} placeholder="e.g., 500mg" />
+                </div>
+               </div>
               <Button onClick={handleMedicineCheck} disabled={loading.medicine}>
                 {loading.medicine ? "Checking..." : "Check Medicine"}
               </Button>
               {medicineResult && (
                  <Alert>
                   <AlertTitle>Identification Result</AlertTitle>
-                  <AlertDescription className="space-y-2">
+                  <AlertDescription className="space-y-3 whitespace-pre-wrap">
                     <p><strong>Is it a medicine?</strong> {medicineResult.identification.isMedicine ? 'Yes' : 'No'}</p>
                     <p><strong>Name:</strong> {medicineResult.identification.name}</p>
                     <p><strong>Confidence:</strong> {Math.round(medicineResult.identification.confidence * 100)}%</p>
-                    <p><strong>Description:</strong> {medicineResult.identification.description}</p>
-                    <p className="text-xs text-red-500 mt-2">Disclaimer: AI identification can be inaccurate. Always verify with a healthcare professional before taking any medication.</p>
+                    <div>
+                        <h4 className="font-semibold">Description:</h4>
+                        <p>{medicineResult.identification.description}</p>
+                    </div>
+                     <div>
+                        <h4 className="font-semibold">Authenticity:</h4>
+                        <p>{medicineResult.identification.authenticity}</p>
+                    </div>
+                     <div>
+                        <h4 className="font-semibold">Usage:</h4>
+                        <p>{medicineResult.identification.usage}</p>
+                    </div>
+                     <div>
+                        <h4 className="font-semibold">Precautions:</h4>
+                        <p>{medicineResult.identification.precautions}</p>
+                    </div>
+                    <p className="text-xs text-red-500 pt-2">Disclaimer: AI identification can be inaccurate. Always verify with a healthcare professional before taking any medication.</p>
                   </AlertDescription>
                 </Alert>
               )}
