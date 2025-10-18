@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { cn } from '@/lib/utils';
-import { useSidebar, SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from '@/components/ui/sidebar';
+import { useSidebar, SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Logo } from '@/components/layout/logo';
 import { navItems } from '@/lib/config';
 import { type Role, type NavItem } from '@/lib/types';
@@ -12,47 +12,33 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, ChevronDown } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useUser } from '@/firebase';
 
 // This would come from your auth context in a real app
 const useUserRole = (): Role => {
+  const { user } = useUser();
   const pathname = usePathname();
+
+  // This is a placeholder for custom claims logic
+  if (user?.email === 'jalal@gmail.com') return 'doctor';
+  if (user?.email?.includes('admin')) return 'admin';
   if (pathname.startsWith('/doctor-dashboard')) return 'doctor';
   if (pathname.startsWith('/admin-panel')) return 'admin';
+
   return 'patient';
 };
 
-const useUser = () => {
+const useUserDisplay = () => {
+    const { user } = useUser();
     const role = useUserRole();
-    if(role === 'doctor') {
+
+    if (role === 'doctor') {
         return { name: "Dr. Jalal", email: "jalal@gmail.com" };
     }
-    if(role === 'patient') {
-        return { name: "Ameen", email: "ameen@example.com" };
+    if (role === 'patient') {
+        return { name: user?.displayName || "Ameen", email: user?.email || "ameen@example.com" };
     }
     return { name: "Admin", email: "admin@healthsphere.com"};
-}
-
-function DashboardNav() {
-  const pathname = usePathname();
-  const role = useUserRole();
-  const currentNavItems = navItems[role];
-
-  return (
-    <nav className="flex flex-col gap-2">
-      {currentNavItems.map((item: NavItem, index: number) => (
-        <Link key={index} href={item.disabled ? '#' : item.href}>
-          <Button
-            variant={pathname === item.href ? 'secondary' : 'ghost'}
-            className="w-full justify-start"
-            disabled={item.disabled}
-          >
-            {item.icon}
-            <span className="ml-2">{item.title}</span>
-          </Button>
-        </Link>
-      ))}
-    </nav>
-  );
 }
 
 function ModernDashboardNav() {
@@ -81,7 +67,7 @@ function ModernDashboardNav() {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const user = useUser();
+  const userDisplay = useUserDisplay();
   const role = useUserRole();
   
   return (
@@ -103,12 +89,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <Button variant="ghost" className="w-full justify-start p-2 h-auto">
                     <div className="flex items-center gap-2 w-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={`https://picsum.photos/seed/${user.email}/40/40`} />
-                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={`https://picsum.photos/seed/${userDisplay.email}/40/40`} />
+                        <AvatarFallback>{userDisplay.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 text-left group-data-[collapsible=icon]:hidden">
-                          <p className="text-sm font-medium leading-none">{user.name}</p>
-                          <p className="text-xs leading-none text-muted-foreground truncate">{user.email}</p>
+                          <p className="text-sm font-medium leading-none">{userDisplay.name}</p>
+                          <p className="text-xs leading-none text-muted-foreground truncate">{userDisplay.email}</p>
                       </div>
                       <ChevronDown className="h-4 w-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
                     </div>
