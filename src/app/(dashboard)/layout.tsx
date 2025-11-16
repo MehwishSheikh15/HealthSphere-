@@ -131,7 +131,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <SidebarProvider>
       <div className="relative flex min-h-screen flex-col">
         <div className="flex flex-1">
-            <Sidebar collapsible="icon">
+            <Sidebar collapsible="icon" className="bg-white border-r shadow-sm">
               <SidebarRail />
                 <SidebarHeader>
                     <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
