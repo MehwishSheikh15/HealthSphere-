@@ -265,7 +265,7 @@ export default function Home() {
             </div>
             <div className="flex justify-center">
               <Button asChild>
-                  <Link href="/patient-dashboard/find-a-doctor">
+                  <Link href="/auth/signup">
                       View All Doctors
                   </Link>
               </Button>
