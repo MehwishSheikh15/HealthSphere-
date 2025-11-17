@@ -80,12 +80,15 @@ type DoctorCardProps = {
 export function DoctorCard({ id, name, specialization, rating, image, isVerified, feePKR }: DoctorCardProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Replace with real login validation later
   useEffect(() => {
-    const token = localStorage.getItem("auth_token");
-    setIsLoggedIn(Boolean(token));
+    // Example: stored user object
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+
+    // Optional chaining here
+    setIsLoggedIn(!!user?.email);
   }, []);
 
+  // Conditional link based on login state
   const linkHref = isLoggedIn
     ? `/patient-dashboard/find-a-doctor/${id}`
     : `/auth/signup`;
