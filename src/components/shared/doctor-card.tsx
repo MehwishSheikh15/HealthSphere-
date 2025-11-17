@@ -84,12 +84,22 @@ type DoctorCardProps = {
 };
 
 export function DoctorCard({ id, name, specialization, rating, image, isVerified, feePKR }: DoctorCardProps) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null); // null = loading
   const router = useRouter();
 
   useEffect(() => {
-    const user = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("user") || "null") : null;
-    setIsLoggedIn(!!user?.email);
+    const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        // Check for email or token presence
+        setIsLoggedIn(!!parsedUser?.email || !!parsedUser?.token);
+      } catch {
+        setIsLoggedIn(false);
+      }
+    } else {
+      setIsLoggedIn(false);
+    }
   }, []);
 
   const handleBookAppointment = () => {
@@ -134,7 +144,11 @@ export function DoctorCard({ id, name, specialization, rating, image, isVerified
       </CardContent>
 
       <CardFooter className="p-4 pt-0">
-        <Button onClick={handleBookAppointment} className="w-full">
+        <Button 
+          onClick={handleBookAppointment} 
+          className="w-full"
+          disabled={isLoggedIn === null} // disable while checking
+        >
           Book Appointment
         </Button>
       </CardFooter>
