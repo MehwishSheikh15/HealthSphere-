@@ -51,7 +51,7 @@ const doctors = [
   },
   {
     id: "ayesha-khan",
-    name: "Dr. Ayesha Khan",
+    name: "Dr. Hamzah Khan",
     specialization: "Dermatologist",
     rating: 4.9,
     image: PlaceHolderImages.find(p => p.id === 'doctor-2')!,
