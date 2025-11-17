@@ -65,7 +65,6 @@ import { Badge } from '@/components/ui/badge';
 import type { ImagePlaceholder } from '@/lib/placeholder-images';
 import { Button } from '../ui/button';
 import Link from 'next/link';
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type DoctorCardProps = {
@@ -79,22 +78,17 @@ type DoctorCardProps = {
 };
 
 export function DoctorCard({ id, name, specialization, rating, image, isVerified, feePKR }: DoctorCardProps) {
-  const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Replace this with your real auth method later
+  // Replace with real login validation later
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
     setIsLoggedIn(Boolean(token));
   }, []);
 
-  const handleClick = () => {
-    if (isLoggedIn) {
-      router.push(`/patient-dashboard/find-a-doctor/$[id]`);
-    } else {
-      router.push(`/auth/signup`);
-    }
-  };
+  const linkHref = isLoggedIn
+    ? `/patient-dashboard/find-a-doctor/${id}`
+    : `/auth/signup`;
 
   return (
     <Card className="w-full max-w-sm overflow-hidden transition-transform duration-300 ease-in-out hover:-translate-y-2 hover:shadow-xl flex flex-col">
@@ -115,6 +109,7 @@ export function DoctorCard({ id, name, specialization, rating, image, isVerified
             </Badge>
           )}
         </div>
+
         <div className="p-4">
           <h3 className="text-lg font-bold font-headline">{name}</h3>
           <p className="text-sm text-muted-foreground">{specialization}</p>
@@ -129,8 +124,8 @@ export function DoctorCard({ id, name, specialization, rating, image, isVerified
       </CardContent>
 
       <CardFooter className="p-4 pt-0">
-        <Button className="w-full" onClick={handleClick}>
-          Book Appointment
+        <Button asChild className="w-full">
+          <Link href={linkHref}>Book Appointment</Link>
         </Button>
       </CardFooter>
     </Card>
