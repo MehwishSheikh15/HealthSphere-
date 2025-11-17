@@ -1,3 +1,4 @@
+"use client";
 import Image from 'next/image';
 import { Star, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
