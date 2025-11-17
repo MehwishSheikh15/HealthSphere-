@@ -53,6 +53,7 @@ export function DoctorCard({ id, name, specialization, rating, image, isVerified
             {/* <Link href={`/patient-dashboard/find-a-doctor/${id}`}>Book Appointment</Link> */}
             <Link href={isLoggedIn ? `/patient-dashboard/find-a-doctor/${id}` : `/auth/signup`}>
         Book Appointment
+            </Link>
           </Button>
       </CardFooter>
     </Card>
