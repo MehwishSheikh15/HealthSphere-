@@ -18,14 +18,7 @@ type DoctorCardProps = {
   feePKR: number;
 };
 
-// export function DoctorCard({ id, name, specialization, rating, image, isVerified, feePKR }: DoctorCardProps) {
 export function DoctorCard({ id, name, specialization, rating, image, isVerified, feePKR }: DoctorCardProps) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user") || "null");
-    setIsLoggedIn(!!user?.email);
-  }, []);
   return (
     <Card className="w-full max-w-sm overflow-hidden transition-transform duration-300 ease-in-out hover:-translate-y-2 hover:shadow-xl flex flex-col">
       <CardContent className="p-0 flex-grow">
