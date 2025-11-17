@@ -71,7 +71,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { ImagePlaceholder } from '@/lib/placeholder-images';
 import { Button } from '../ui/button';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 type DoctorCardProps = {
   id: string;
@@ -84,16 +84,21 @@ type DoctorCardProps = {
 };
 
 export function DoctorCard({ id, name, specialization, rating, image, isVerified, feePKR }: DoctorCardProps) {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    // Check login only in browser
     const user = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("user") || "null") : null;
     setIsLoggedIn(!!user?.email);
   }, []);
 
-  // Wait until login state is determined
-  if (isLoggedIn === null) return null;
+  const handleBookAppointment = () => {
+    if (isLoggedIn) {
+      router.push(`/patient-dashboard/find-a-doctor/${id}`);
+    } else {
+      router.push(`/auth/signup`);
+    }
+  };
 
   return (
     <Card className="w-full max-w-sm overflow-hidden transition-transform duration-300 ease-in-out hover:-translate-y-2 hover:shadow-xl flex flex-col">
@@ -129,13 +134,10 @@ export function DoctorCard({ id, name, specialization, rating, image, isVerified
       </CardContent>
 
       <CardFooter className="p-4 pt-0">
-        <Button asChild className="w-full">
-          <Link href={isLoggedIn ? `/patient-dashboard/find-a-doctor/${id}` : `/auth/signup`}>
-            Book Appointment
-          </Link>
+        <Button onClick={handleBookAppointment} className="w-full">
+          Book Appointment
         </Button>
       </CardFooter>
     </Card>
   );
 }
-
