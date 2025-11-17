@@ -90,7 +90,7 @@ export function DoctorCard({ id, name, specialization, rating, image, isVerified
 
   const handleClick = () => {
     if (isLoggedIn) {
-      router.push(`/patient-dashboard/find-a-doctor/${id}`);
+      router.push(`/patient-dashboard/find-a-doctor/$[id]`);
     } else {
       router.push(`/auth/signup`);
     }
