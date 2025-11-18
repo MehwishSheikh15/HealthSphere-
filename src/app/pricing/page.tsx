@@ -39,6 +39,12 @@ export default function PricingPage() {
     <div className="flex flex-col min-h-[100dvh]">
       <section className="w-full py-12 md:py-24 lg:py-32">
         <div className="container px-4 md:px-6">
+          {/* ⭐ Back to Home Button Added Here */}
+          <div className="mb-6">
+            <Button asChild variant="outline">
+              <Link href="/">← Back to Home</Link>
+            </Button>
+          </div>
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             <div className="space-y-2">
               <h1 className="font-headline text-3xl font-bold tracking-tighter sm:text-5xl">
