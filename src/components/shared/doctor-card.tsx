@@ -52,10 +52,8 @@ export function DoctorCard({ id, name, specialization, rating, image, isVerified
       </CardContent>
       <CardFooter className="p-4 pt-0">
          <Button asChild className="w-full">
-            {/* <Link href={`/patient-dashboard/find-a-doctor/${id}`}>Book Appointment</Link> */}
-            <Link href={isLoggedIn ? `/patient-dashboard/find-a-doctor/${id}` : `/auth/signup`}>
-        Book Appointment
-            </Link>
+           <Link href={`/patient-dashboard/find-a-doctor/${id}`}>Book Appointment</Link>
+        
           </Button>
       </CardFooter>
     </Card>
