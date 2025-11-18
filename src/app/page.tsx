@@ -248,7 +248,7 @@ export default function Home() {
           </div>
         </section>
         
-        <section id="doctors" className="w-full py-12 md:py-24 lg:py-32 bg-secondary/50">
+        {/* <section id="doctors" className="w-full py-12 md:py-24 lg:py-32 bg-secondary/50">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
@@ -271,7 +271,7 @@ export default function Home() {
               </Button>
             </div>
           </div>
-        </section>
+        </section> */}
 
         <section className="w-full py-12 md:py-24 lg:py-32">
           <div className="container grid items-center justify-center gap-4 px-4 text-center md:px-6">
